@@ -6,6 +6,7 @@ import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Button } from "@/components/ui/button";
 import { PortalUserMenu } from "./_components/portal-user-menu";
+import { PortalFooter } from "./_components/portal-footer";
 
 export default async function PortalLayout({
   children,
@@ -91,92 +92,7 @@ export default async function PortalLayout({
       <main className="flex-1">{children}</main>
 
       {/* Faculty Portal Footer */}
-      <footer className="border-t border-border bg-muted/40 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2 space-y-3">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                <span className="font-bold text-base">
-                  {isThai ? "คณะพุทธศาสตร์" : "Faculty of Buddhism"}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {isThai
-                  ? "ศูนย์กลางการศึกษาพระพุทธศาสนาและวิชาการระดับสากล บูรณาการพุทธธรรมสู่การพัฒนาจิตใจและสังคมอย่างยั่งยืน"
-                  : "Center of Buddhist Education and International Academics, integrating Buddhist values for social and spiritual development."}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {isThai
-                  ? "79 หมู่ที่ 1 ถนนพหลโยธิน ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170"
-                  : "79 Moo 1, Phahonyothin Rd., Lam Sai, Wang Noi, Phra Nakhon Si Ayutthaya 13170 Thailand"}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold">{isThai ? "เมนูด่วน" : "Quick Links"}</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/news" className="hover:text-foreground">
-                    {isThai ? "ข่าวสารและประกาศ" : "News & Announcements"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/curriculum" className="hover:text-foreground">
-                    {isThai ? "หลักสูตรปริญญาตรี-โท-เอก" : "Degree Programs"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/staff" className="hover:text-foreground">
-                    {isThai ? "ทำเนียบคณาจารย์" : "Faculty Directory"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/rooms" className="hover:text-foreground">
-                    {isThai ? "จองห้องประชุมและห้องเรียน" : "Room Reservations"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold">{isThai ? "บริการออนไลน์" : "Online Services"}</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/services" className="hover:text-foreground">
-                    {isThai ? "ระบบคำร้องนิสิต & ตรวจสอบ QR" : "Student Requests & QR Verify"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/attendance/checkin" className="hover:text-foreground">
-                    {isThai ? "ระบบเช็คชื่อเข้าเรียนออนไลน์" : "Classroom Check-In"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/documents/track" className="hover:text-foreground">
-                    {isThai ? "ติดตามเอกสารสารบรรณ" : "Document Tracking"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/admin/news" className="hover:text-foreground">
-                    {isThai ? "ระบบจัดการข่าวสาร" : "News Management"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/login" className="hover:text-foreground">
-                    {isThai ? "ระบบสารสนเทศบุคลากร" : "Staff Intranet"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
-            <p>© 2026 Faculty of Buddhism. All rights reserved.</p>
-            <p>Built with VibeCore Framework</p>
-          </div>
-        </div>
-      </footer>
+      <PortalFooter isThai={isThai} />
     </div>
   );
 }
