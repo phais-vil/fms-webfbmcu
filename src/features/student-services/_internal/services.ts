@@ -7,14 +7,36 @@ import type {
   ReviewStudentRequestInput,
 } from "./validations";
 
-export type CertificateTypeDto = CertificateType;
-export type StudentRequestDto = StudentRequest & {
-  certificateType?: CertificateType | null;
+export type CertificateTypeDto = Omit<CertificateType, "fee"> & {
+  fee: number;
+};
+
+export type StudentRequestDto = Omit<StudentRequest, "certificateType"> & {
+  certificateType?: CertificateTypeDto | null;
   tenant?: {
     nameTh: string;
     nameEn: string;
   } | null;
 };
+
+function mapCertificateType(cert: CertificateType): CertificateTypeDto {
+  return {
+    ...cert,
+    fee: Number(cert.fee),
+  };
+}
+
+function mapStudentRequest(
+  req: StudentRequest & {
+    certificateType?: CertificateType | null;
+    tenant?: { nameTh: string; nameEn: string } | null;
+  }
+): StudentRequestDto {
+  return {
+    ...req,
+    certificateType: req.certificateType ? mapCertificateType(req.certificateType) : null,
+  };
+}
 
 export async function listCertificateTypes(
   tenantId: string,
@@ -28,20 +50,23 @@ export async function listCertificateTypes(
     where.category = options.category;
   }
 
-  return prisma.certificateType.findMany({
+  const items = await prisma.certificateType.findMany({
     where,
     orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
   });
+
+  return items.map(mapCertificateType);
 }
 
 export async function getCertificateTypeById(tenantId: string, id: string): Promise<CertificateTypeDto | null> {
-  return prisma.certificateType.findFirst({
+  const cert = await prisma.certificateType.findFirst({
     where: { id, tenantId },
   });
+  return cert ? mapCertificateType(cert) : null;
 }
 
 export async function createCertificateType(tenantId: string, input: CreateCertificateTypeInput): Promise<CertificateTypeDto> {
-  return prisma.certificateType.create({
+  const created = await prisma.certificateType.create({
     data: {
       tenantId,
       code: input.code.trim().toUpperCase(),
@@ -57,6 +82,7 @@ export async function createCertificateType(tenantId: string, input: CreateCerti
       displayOrder: input.displayOrder,
     },
   });
+  return mapCertificateType(created);
 }
 
 export async function updateCertificateType(tenantId: string, input: UpdateCertificateTypeInput): Promise<CertificateTypeDto> {
@@ -73,16 +99,18 @@ export async function updateCertificateType(tenantId: string, input: UpdateCerti
   if (input.isActive !== undefined) data.isActive = input.isActive;
   if (input.displayOrder !== undefined) data.displayOrder = input.displayOrder;
 
-  return prisma.certificateType.update({
+  const updated = await prisma.certificateType.update({
     where: { id: input.id, tenantId },
     data,
   });
+  return mapCertificateType(updated);
 }
 
 export async function deleteCertificateType(tenantId: string, id: string): Promise<CertificateTypeDto> {
-  return prisma.certificateType.delete({
+  const deleted = await prisma.certificateType.delete({
     where: { id, tenantId },
   });
+  return mapCertificateType(deleted);
 }
 
 export async function submitStudentRequest(tenantId: string, input: SubmitStudentRequestInput): Promise<StudentRequestDto> {
@@ -90,7 +118,7 @@ export async function submitStudentRequest(tenantId: string, input: SubmitStuden
   const currentYear = new Date().getFullYear();
   const requestNumber = `REQ-${currentYear}-${randNum}`;
 
-  return prisma.studentRequest.create({
+  const created = await prisma.studentRequest.create({
     data: {
       tenantId,
       certificateTypeId: input.certificateTypeId,
@@ -114,6 +142,8 @@ export async function submitStudentRequest(tenantId: string, input: SubmitStuden
       certificateType: true,
     },
   });
+
+  return mapStudentRequest(created);
 }
 
 export async function listStudentRequests(
@@ -172,7 +202,7 @@ export async function listStudentRequests(
   ]);
 
   return {
-    items,
+    items: items.map(mapStudentRequest),
     total,
     page,
     pageSize,
@@ -181,7 +211,7 @@ export async function listStudentRequests(
 }
 
 export async function getStudentRequestsByCode(tenantId: string, studentCode: string): Promise<StudentRequestDto[]> {
-  return prisma.studentRequest.findMany({
+  const items = await prisma.studentRequest.findMany({
     where: {
       tenantId,
       studentCode: studentCode.trim(),
@@ -191,15 +221,17 @@ export async function getStudentRequestsByCode(tenantId: string, studentCode: st
     },
     orderBy: { createdAt: "desc" },
   });
+  return items.map(mapStudentRequest);
 }
 
 export async function getStudentRequestById(tenantId: string, id: string): Promise<StudentRequestDto | null> {
-  return prisma.studentRequest.findFirst({
+  const req = await prisma.studentRequest.findFirst({
     where: { id, tenantId },
     include: {
       certificateType: true,
     },
   });
+  return req ? mapStudentRequest(req) : null;
 }
 
 export async function reviewStudentRequest(tenantId: string, input: ReviewStudentRequestInput): Promise<StudentRequestDto> {
@@ -231,13 +263,15 @@ export async function reviewStudentRequest(tenantId: string, input: ReviewStuden
     data.expiresAt = expires;
   }
 
-  return prisma.studentRequest.update({
+  const updated = await prisma.studentRequest.update({
     where: { id: input.id, tenantId },
     data,
     include: {
       certificateType: true,
     },
   });
+
+  return mapStudentRequest(updated);
 }
 
 /**
@@ -245,7 +279,7 @@ export async function reviewStudentRequest(tenantId: string, input: ReviewStuden
  */
 export async function verifyCertificateByCode(verificationCode: string): Promise<StudentRequestDto | null> {
   const code = verificationCode.trim().toUpperCase();
-  return prisma.studentRequest.findFirst({
+  const req = await prisma.studentRequest.findFirst({
     where: {
       verificationCode: code,
       status: "APPROVED",
@@ -260,4 +294,5 @@ export async function verifyCertificateByCode(verificationCode: string): Promise
       },
     },
   });
+  return req ? mapStudentRequest(req) : null;
 }
