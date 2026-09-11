@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { GraduationCap, LogIn, LayoutDashboard } from "lucide-react";
+import { GraduationCap, LogIn } from "lucide-react";
 import { auth } from "@/features/identity/server";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Button } from "@/components/ui/button";
+import { PortalUserMenu } from "./_components/portal-user-menu";
 
 export default async function PortalLayout({
   children,
@@ -73,12 +74,7 @@ export default async function PortalLayout({
           <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSwitcher className="h-9 w-9" />
             {session?.user ? (
-              <Button asChild size="sm" className="gap-2">
-                <Link href="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span className="hidden sm:inline">{isThai ? "ระบบหลังบ้าน" : "Console"}</span>
-                </Link>
-              </Button>
+              <PortalUserMenu user={session.user} isThai={isThai} />
             ) : (
               <Button asChild size="sm" variant="default" className="gap-2">
                 <Link href="/login">
