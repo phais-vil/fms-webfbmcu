@@ -7,8 +7,9 @@ import {
   CalendarDays,
   FileCheck2,
   QrCode,
-  Sparkles,
   Pin,
+  Target,
+  FileText
 } from "lucide-react";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
@@ -17,7 +18,9 @@ import {
   resolvePublicTenantId,
   listPublicNewsArticles,
 } from "@/features/news/server";
+import { listActivePublicBanners } from "@/features/portal-cms/server";
 import { Button } from "@/components/ui/button";
+import { HeroCarousel } from "./_components/hero-carousel";
 
 export default async function PortalHomePage() {
   const cookieLocale = await getLocaleCookie();
@@ -26,6 +29,7 @@ export default async function PortalHomePage() {
 
   const tenantId = await resolvePublicTenantId();
   const articles = await listPublicNewsArticles(tenantId, { limit: 7 });
+  const banners = await listActivePublicBanners(tenantId);
 
   const pinnedArticles = articles.filter((a) => a.isPinned);
   const heroArticle = pinnedArticles[0] || articles[0];
@@ -34,49 +38,7 @@ export default async function PortalHomePage() {
   return (
     <div className="space-y-16 pb-20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-primary/5 to-background pt-16 pb-20 lg:pt-24 lg:pb-28 border-b border-border/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold tracking-wide">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>
-              {isThai
-                ? "คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
-                : "Faculty of Buddhism, MCU"}
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-            {isThai ? (
-              <>
-                แหล่งรวมปัญญาวิชาการ <br className="hidden sm:inline" />
-                <span className="text-primary">พัฒนาจิตใจสู่สังคมสากล</span>
-              </>
-            ) : (
-              <>
-                Wisdom & Buddhist Studies <br className="hidden sm:inline" />
-                <span className="text-primary">for Global Harmony</span>
-              </>
-            )}
-          </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            {isThai
-              ? "มุ่งผลิตบัณฑิตให้มีความรู้เชี่ยวชาญในพระไตรปิฎก มีคุณธรรม จริยธรรม พร้อมประยุกต์หลักพุทธธรรมเพื่อแก้ไขปัญหาสังคมยุคดิจิทัล"
-              : "Dedicated to fostering scholars in Tipitaka studies, ethics, and mindfulness, integrating Buddhist wisdom to enrich contemporary society."}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Button asChild size="lg" className="gap-2 shadow-md">
-              <Link href="/news">
-                <span>{isThai ? "อ่านข่าวสารประชาสัมพันธ์" : "Explore News"}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/curriculum">
-                {isThai ? "ดูหลักสูตรการศึกษา" : "Academic Programs"}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel banners={banners} isThai={isThai} />
 
       {/* Quick E-Services Section */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,9 +53,9 @@ export default async function PortalHomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
-            href="/admin/news"
+            href="/news"
             className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
           >
             <div className="h-12 w-12 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -108,7 +70,7 @@ export default async function PortalHomePage() {
           </Link>
 
           <Link
-            href="/login"
+            href="/rooms"
             className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
           >
             <div className="h-12 w-12 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -123,7 +85,7 @@ export default async function PortalHomePage() {
           </Link>
 
           <Link
-            href="/login"
+            href="/services"
             className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
           >
             <div className="h-12 w-12 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -138,7 +100,7 @@ export default async function PortalHomePage() {
           </Link>
 
           <Link
-            href="/login"
+            href="/attendance/checkin"
             className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
           >
             <div className="h-12 w-12 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -149,6 +111,36 @@ export default async function PortalHomePage() {
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {isThai ? "ระบบตรวจลงทะเบียนเข้าเรียนและกิจกรรมด้วย QR สด" : "Real-time class and activity check-in via Dynamic QR"}
+            </p>
+          </Link>
+
+          <Link
+            href="/documents/track"
+            className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <FileText className="h-6 w-6" />
+            </div>
+            <h3 className="font-semibold text-base text-foreground mb-1">
+              {isThai ? "ติดตามเอกสาร" : "Track Documents"}
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {isThai ? "ตรวจสอบสถานะการอนุมัติเอกสารและคำร้องต่างๆ" : "Check the status of your document approvals"}
+            </p>
+          </Link>
+
+          <Link
+            href="/projects"
+            className="card p-6 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all group"
+          >
+            <div className="h-12 w-12 rounded-lg bg-cyan-500/10 text-cyan-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Target className="h-6 w-6" />
+            </div>
+            <h3 className="font-semibold text-base text-foreground mb-1">
+              {isThai ? "แผนปฏิบัติการ" : "Strategic Projects"}
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {isThai ? "ติดตามความคืบหน้าโครงการและงบประมาณประจำปี" : "Track annual projects and budget utilization"}
             </p>
           </Link>
         </div>

@@ -1168,6 +1168,49 @@ Date: November 15-16, 2026 at MCU Main Auditorium, Wang Noi, Ayutthaya, Thailand
     }
   }
 
+  // --- 11. Portal CMS Banners Feature ---
+  const bannerSample = [
+    {
+      titleTh: "ยินดีต้อนรับสู่ คณะพุทธศาสตร์ มหาจุฬาลงกรณราชวิทยาลัย",
+      titleEn: "Welcome to Faculty of Buddhism, MCU",
+      subtitleTh: "แหล่งรวมปัญญาวิชาการ พัฒนาจิตใจสู่สังคมสากล",
+      subtitleEn: "Wisdom & Buddhist Studies for Global Harmony",
+      tagTh: "ประกาศคณะ",
+      tagEn: "Faculty Notice",
+      imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1920&q=80",
+      linkUrl: "/news",
+      buttonTextTh: "ข่าวสารล่าสุด",
+      buttonTextEn: "Latest News",
+      displayOrder: 1,
+      isActive: true,
+    },
+    {
+      titleTh: "เปิดรับสมัครนิสิตใหม่ ปีการศึกษา 2568",
+      titleEn: "Admissions Open 2026",
+      subtitleTh: "ระดับปริญญาตรี โท และเอก พร้อมทุนการศึกษา",
+      subtitleEn: "Bachelor, Master, and Ph.D. Programs",
+      tagTh: "รับสมัคร",
+      tagEn: "Admission",
+      imageUrl: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1920&q=80",
+      linkUrl: "/curriculum",
+      buttonTextTh: "ดูหลักสูตร",
+      buttonTextEn: "View Programs",
+      displayOrder: 2,
+      isActive: true,
+    }
+  ];
+
+  for (const b of bannerSample) {
+    const existing = await prisma.portalBanner.findFirst({
+      where: { tenantId: core.tenantId, titleTh: b.titleTh },
+    });
+    if (!existing) {
+      await prisma.portalBanner.create({
+        data: { tenantId: core.tenantId, ...b },
+      });
+    }
+  }
+
   console.log(`[seed] เสร็จ — login: admin@app.local / ${DEV_PASSWORD}`);
 }
 

@@ -58,6 +58,10 @@ export const sidebarGroups: NavGroup[] = [
     items: [{ title: "projects.nav", href: "/admin/projects", icon: Target, permission: PROJECT_P.projectRead }],
   },
   {
+    label: "cms.nav",
+    items: [{ title: "cms.nav", href: "/admin/banners", icon: ImageIcon, permission: CMS_P.cmsRead }],
+  },
+  {
     label: "nav.group.sample",
     items: [{ title: "sample.nav", href: "/sample", icon: Layers, permission: SAMPLE_P.sampleRead }],
   },
