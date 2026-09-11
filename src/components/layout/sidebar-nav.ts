@@ -1,6 +1,15 @@
-import { LayoutDashboard, Users, Settings, Layers, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Layers, Newspaper, UserCheck, GraduationCap, CalendarCheck, FileCheck, QrCode, FileText, Target, Image as ImageIcon, type LucideIcon } from "lucide-react";
 import { hasPermission, P } from "@/features/identity";
 import { SAMPLE_P } from "@/features/sample";
+import { NEWS_P } from "@/features/news";
+import { STAFF_P } from "@/features/staff";
+import { CURRICULUM_P } from "@/features/curriculum";
+import { ROOMS_P } from "@/features/rooms";
+import { STUDENT_SERVICES_P } from "@/features/student-services";
+import { ATTENDANCE_P } from "@/features/attendance";
+import { DOCUMENT_P } from "@/features/documents";
+import { PROJECT_P } from "@/features/projects";
+import { CMS_P } from "@/features/portal-cms";
 
 export interface NavItem {
   /** i18n key */
@@ -16,6 +25,38 @@ export interface NavCrumb { title: string; href: string }
 
 export const sidebarGroups: NavGroup[] = [
   { label: "nav.group.overview", items: [{ title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard }] },
+  {
+    label: "news.nav",
+    items: [{ title: "news.nav", href: "/admin/news", icon: Newspaper, permission: NEWS_P.newsRead }],
+  },
+  {
+    label: "staff.nav",
+    items: [{ title: "staff.nav", href: "/admin/staff", icon: UserCheck, permission: STAFF_P.staffRead }],
+  },
+  {
+    label: "curriculum.nav",
+    items: [{ title: "curriculum.nav", href: "/admin/curriculum", icon: GraduationCap, permission: CURRICULUM_P.curriculumRead }],
+  },
+  {
+    label: "rooms.nav",
+    items: [{ title: "rooms.nav", href: "/admin/rooms", icon: CalendarCheck, permission: ROOMS_P.roomsRead }],
+  },
+  {
+    label: "studentServices.nav",
+    items: [{ title: "studentServices.nav", href: "/admin/student-services", icon: FileCheck, permission: STUDENT_SERVICES_P.studentRead }],
+  },
+  {
+    label: "attendance.nav",
+    items: [{ title: "attendance.nav", href: "/admin/attendance", icon: QrCode, permission: ATTENDANCE_P.attendanceRead }],
+  },
+  {
+    label: "documents.nav",
+    items: [{ title: "documents.nav", href: "/admin/documents", icon: FileText, permission: DOCUMENT_P.documentRead }],
+  },
+  {
+    label: "projects.nav",
+    items: [{ title: "projects.nav", href: "/admin/projects", icon: Target, permission: PROJECT_P.projectRead }],
+  },
   {
     label: "nav.group.sample",
     items: [{ title: "sample.nav", href: "/sample", icon: Layers, permission: SAMPLE_P.sampleRead }],
