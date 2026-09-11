@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   GraduationCap,
-  LogIn,
   Sun,
   Moon,
   Menu,
@@ -20,8 +19,8 @@ import {
   Target,
   Home,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useAppSession } from "@/hooks/use-session";
 import { PortalUserMenu } from "./portal-user-menu";
 
 interface PortalNavbarProps {
@@ -36,6 +35,8 @@ interface PortalNavbarProps {
 export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { user: clientUser } = useAppSession();
+  const activeUser = clientUser ?? sessionUser;
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -147,17 +148,8 @@ export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
           {/* Language Switcher */}
           <LanguageSwitcher className="h-9 w-9" />
 
-          {/* User Avatar Menu or Sign In Button */}
-          {sessionUser ? (
-            <PortalUserMenu user={sessionUser} isThai={isThai} />
-          ) : (
-            <Button asChild size="sm" className="gap-1.5 h-9 shadow-xs">
-              <Link href="/login">
-                <LogIn className="h-4 w-4" />
-                <span>{isThai ? "เข้าสู่ระบบ" : "Sign In"}</span>
-              </Link>
-            </Button>
-          )}
+          {/* Staff Console Avatar Menu */}
+          <PortalUserMenu user={activeUser} isThai={isThai} />
 
           {/* Mobile Hamburger Button */}
           <button
