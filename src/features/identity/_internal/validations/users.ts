@@ -35,6 +35,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   userId: z.string().uuid(),
   name: z.string().trim().min(1).max(255).optional(),
+  email: emailSchema.optional(),
   roles: roleAssignmentsSchema.optional(),
   mustChangePassword: z.boolean().optional(),
 });

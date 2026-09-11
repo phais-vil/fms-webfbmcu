@@ -13,6 +13,7 @@ const messages: Dictionary = {
   "palette.pink": { th: "ชมพู", en: "Pink" },
   "palette.green": { th: "เขียว", en: "Green" },
   "palette.purple": { th: "ม่วง", en: "Purple" },
+  "palette.mourning": { th: "แสดงความไว้อาลัย", en: "Mourning" },
 };
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -24,10 +25,10 @@ function renderWithI18n(ui: React.ReactElement) {
 }
 
 describe("PalettePicker", () => {
-  it("แสดงครบ 5 ตัวเลือก (รวม coral) เป็น radio และตัวที่เลือกถูกติ๊ก", () => {
+  it("แสดงครบ 6 ตัวเลือก (รวม coral และ mourning) เป็น radio และตัวที่เลือกถูกติ๊ก", () => {
     renderWithI18n(<PalettePicker value="green" onChange={() => {}} label="เลือกโทนสี" />);
     const radios = screen.getAllByRole("radio");
-    expect(radios.map((r) => r.getAttribute("data-palette"))).toEqual(["blue", "coral", "pink", "green", "purple"]);
+    expect(radios.map((r) => r.getAttribute("data-palette"))).toEqual(["blue", "coral", "pink", "green", "purple", "mourning"]);
     expect(screen.getByRole("radio", { name: /เขียว/ }).getAttribute("aria-checked")).toBe("true");
     expect(screen.getByRole("radiogroup", { name: "เลือกโทนสี" })).toBeTruthy();
   });

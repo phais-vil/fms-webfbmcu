@@ -6,9 +6,6 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   GraduationCap,
-  Sun,
-  Moon,
-  Menu,
   X,
   Newspaper,
   BookOpen,
@@ -18,10 +15,18 @@ import {
   QrCode,
   Target,
   Home,
+  ChevronDown,
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAppSession } from "@/hooks/use-session";
 import { PortalUserMenu } from "./portal-user-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/shared/lib/utils";
 
 interface PortalNavbarProps {
   sessionUser: {
@@ -30,9 +35,18 @@ interface PortalNavbarProps {
     image?: string | null;
   } | null;
   isThai: boolean;
+  tenantNameTh?: string | null;
+  tenantNameEn?: string | null;
+  logoUrl?: string | null;
 }
 
-export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
+export function PortalNavbar({
+  sessionUser,
+  isThai,
+  tenantNameTh,
+  tenantNameEn,
+  logoUrl,
+}: PortalNavbarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user: clientUser } = useAppSession();
@@ -50,6 +64,7 @@ export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
     setMobileMenuOpen(false);
   }
 
+  // All 8 Core Portal Menus preserved
   const navLinks = [
     { href: "/", labelTh: "หน้าแรก", labelEn: "Home", icon: Home },
     { href: "/news", labelTh: "ข่าวสาร", labelEn: "News", icon: Newspaper },
@@ -66,114 +81,181 @@ export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
     return pathname.startsWith(href);
   };
 
+  const facultyTitle = isThai
+    ? tenantNameTh || "คณะพุทธศาสตร์"
+    : tenantNameEn || "Faculty of Buddhism";
+  const universitySubtitle = isThai
+    ? "มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
+    : "Mahachulalongkornrajavidyalaya University";
+
   return (
-    <header className="sticky top-0 z-50 w-full h-16 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-xs transition-colors">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-2">
-        {/* Left: Brand / Faculty Logo (Admin Style) */}
-        <Link href="/" className="flex items-center gap-3 shrink-0 group">
-          <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs ring-1 ring-primary/20 transition-transform group-hover:scale-105">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-bold text-base leading-tight tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
-              {isThai ? "คณะพุทธศาสตร์" : "Faculty of Buddhism"}
-            </span>
-            <span className="text-[11px] text-muted-foreground truncate hidden sm:inline-block">
-              {isThai ? "มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย (มจร)" : "Mahachulalongkornrajavidyalaya University"}
-            </span>
-          </div>
-        </Link>
+    <header className="adm-head sticky top-0 z-50 w-full">
+      {/* Brand Block (Admin Shell Style: <i> icon + <b> title + <span> subtitle) */}
+      <Link href="/" className="brand-blk w-auto shrink-0 mr-2 xl:mr-4">
+        <i>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={facultyTitle}
+              className="w-full h-full object-contain p-0.5 rounded-[var(--r-sm)]"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <GraduationCap className="h-5 w-5" aria-hidden="true" />
+          )}
+        </i>
+        <div className="t">
+          <b>{facultyTitle}</b>
+          <span>{universitySubtitle}</span>
+        </div>
+      </Link>
 
-        {/* Center: Desktop Navigation Pills (Admin style) */}
-        <nav className="hidden xl:flex items-center gap-1">
-          {navLinks.map((item) => {
-            const active = isLinkActive(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all ${
-                  active
-                    ? "bg-primary/10 text-primary font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-              >
-                <Icon className={`h-3.5 w-3.5 ${active ? "text-primary" : "text-muted-foreground"}`} />
-                <span>{isThai ? item.labelTh : item.labelEn}</span>
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Desktop Navigation (All 8 items visible side-by-side on xl) */}
+      <nav className="hidden xl:flex items-center gap-1 min-w-0" aria-label="Portal Navigation">
+        {navLinks.map((item) => {
+          const active = isLinkActive(item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--r-sm)] text-[0.84rem] font-medium transition-colors whitespace-nowrap",
+                active
+                  ? "bg-[var(--brand-bg)] text-[var(--brand-ink)] font-semibold shadow-[var(--shadow-xs)]"
+                  : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--glass-hover)]"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span>{isThai ? item.labelTh : item.labelEn}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Medium Screen Menu (Laptop / Tablet) - compact text */}
-        <nav className="hidden md:flex xl:hidden items-center gap-0.5">
-          {navLinks.slice(0, 6).map((item) => {
-            const active = isLinkActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                  active
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {isThai ? item.labelTh : item.labelEn}
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Medium Screen Navigation (Top 5 items + More dropdown on md-lg) */}
+      <nav className="hidden md:flex xl:hidden items-center gap-1 min-w-0" aria-label="Portal Navigation Compact">
+        {navLinks.slice(0, 5).map((item) => {
+          const active = isLinkActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "px-2.5 py-1.5 rounded-[var(--r-sm)] text-[0.82rem] font-medium transition-colors whitespace-nowrap",
+                active
+                  ? "bg-[var(--brand-bg)] text-[var(--brand-ink)] font-semibold"
+                  : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--glass-hover)]"
+              )}
+            >
+              {isThai ? item.labelTh : item.labelEn}
+            </Link>
+          );
+        })}
 
-        {/* Right: Controls (Theme Toggle, Language Switcher, Account Avatar / Sign In) */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          {/* Theme Toggle Button (Admin Style) */}
-          {mounted && (
+        {/* More Dropdown for remaining items */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
               type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-9 w-9 rounded-lg border border-border/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label={isThai ? "เปลี่ยนธีม" : "Toggle Theme"}
-              title={isThai ? "เปลี่ยนโหมดสี (สว่าง/มืด)" : "Toggle theme (Light/Dark)"}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-amber-500" />
-              ) : (
-                <Moon className="h-4 w-4 text-slate-700" />
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-1.5 rounded-[var(--r-sm)] text-[0.82rem] font-medium transition-colors whitespace-nowrap cursor-pointer",
+                navLinks.slice(5).some((i) => isLinkActive(i.href))
+                  ? "bg-[var(--brand-bg)] text-[var(--brand-ink)] font-semibold"
+                  : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--glass-hover)]"
               )}
+            >
+              <span>{isThai ? "เพิ่มเติม" : "More"}</span>
+              <ChevronDown className="h-3.5 w-3.5" />
             </button>
-          )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-md">
+            {navLinks.slice(5).map((item) => {
+              const active = isLinkActive(item.href);
+              const Icon = item.icon;
+              return (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-md cursor-pointer",
+                      active && "bg-primary/10 text-primary font-semibold"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span>{isThai ? item.labelTh : item.labelEn}</span>
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </nav>
 
-          {/* Language Switcher */}
-          <LanguageSwitcher className="h-9 w-9" />
+      {/* Spacer pushing right-hand utilities */}
+      <span className="sp" />
 
-          {/* Staff Console Avatar Menu */}
-          <PortalUserMenu user={activeUser} isThai={isThai} />
+      {/* Role / Portal Pill (Admin Shell Style) */}
+      <span className="pill role hidden sm:inline-flex">
+        {isThai ? "คณะพุทธศาสตร์" : "Portal"}
+      </span>
 
-          {/* Mobile Hamburger Button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden h-9 w-9 rounded-lg border border-border/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-            aria-label="Open mobile menu"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
+      {/* Theme Toggle Button (Admin Shell Style) */}
+      {mounted && (
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={isThai ? "เปลี่ยนธีม" : "Toggle theme"}
+          title={isThai ? "เปลี่ยนโหมดสี (สว่าง/มืด)" : "Toggle theme (Light/Dark)"}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          <svg className="sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2v2.3M12 19.7V22M2 12h2.3M19.7 12H22M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6" />
+          </svg>
+          <svg className="moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 14.7A8.3 8.3 0 0 1 9.3 3.8a8.5 8.5 0 1 0 10.9 10.9Z" />
+          </svg>
+        </button>
+      )}
 
-      {/* Mobile Drawer Navigation (Slide-down with backdrop) */}
+      {/* Language Switcher (Admin Shell Style) */}
+      <LanguageSwitcher className="lang" />
+
+      {/* Staff Console / User Menu Avatar (Admin Account Style) */}
+      <PortalUserMenu user={activeUser} isThai={isThai} />
+
+      {/* Mobile Drawer Hamburger Trigger (Admin Style icon-btn) */}
+      <button
+        type="button"
+        className="icon-btn md:hidden"
+        aria-label={isThai ? "เปิดเมนู" : "Open menu"}
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
+        {mobileMenuOpen ? (
+          <X className="h-4 w-4" />
+        ) : (
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        )}
+      </button>
+
+      {/* Mobile Drawer Navigation (Slide-down with backdrop blur) */}
       {mobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 top-16 z-40 bg-black/40 backdrop-blur-xs md:hidden"
+            className="fixed inset-0 top-[var(--adm-head-h)] z-40 bg-black/40 backdrop-blur-xs md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed top-16 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md p-4 shadow-xl md:hidden flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-1">
-              {isThai ? "เมนูหลัก คณะพุทธศาสตร์" : "Faculty Navigation"}
-            </p>
+          <div className="fixed top-[var(--adm-head-h)] left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md p-4 shadow-xl md:hidden flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-var(--adm-head-h))] overflow-y-auto">
+            <div className="flex items-center justify-between px-3 py-1 text-xs font-semibold text-muted-foreground uppercase border-b border-border/50 pb-2 mb-1">
+              <span>{isThai ? "เมนูหลัก คณะพุทธศาสตร์" : "Faculty Navigation"}</span>
+              <span className="pill role text-[10px]">Portal</span>
+            </div>
             {navLinks.map((item) => {
               const active = isLinkActive(item.href);
               const Icon = item.icon;
@@ -181,13 +263,14 @@ export function PortalNavbar({ sessionUser, isThai }: PortalNavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-sm)] text-sm font-medium transition-colors",
                     active
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
+                      ? "bg-[var(--brand-bg)] text-[var(--brand-ink)] font-semibold shadow-[var(--shadow-xs)]"
+                      : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--glass-hover)]"
+                  )}
                 >
-                  <Icon className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                  <Icon className="h-4 w-4 shrink-0" />
                   <span>{isThai ? item.labelTh : item.labelEn}</span>
                 </Link>
               );

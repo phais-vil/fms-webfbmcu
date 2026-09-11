@@ -37,6 +37,17 @@ describe("user.service", () => {
     expect(list.items[0].mustChangePassword).toBe(true);
     await expect(updateUser({ tenantId, actorId: adminId, isSuperAdmin: true, permissions: [], userId: adminId, roles: [{ roleId: core.roleIds.VIEWER, scopeType: "ALL", scopeId: null }] })).rejects.toMatchObject({ code: "forbidden", message: "cannot_edit_self" });
   });
+  it("updateUser สามารถแก้ไขอีเมลได้โดยตรง ตรวจสอบอีเมลซ้ำ และห้ามแก้ของตัวเอง", async () => {
+    const { core, adminId, tenantId } = await setup();
+    const uid = await seedUser(prisma, tenantId, { email: "edit-me@t.t", name: "EditMe", passwordHash: "x", roleIds: [core.roleIds.VIEWER] });
+    await updateUser({ tenantId, actorId: adminId, isSuperAdmin: true, permissions: [], userId: uid, email: "updated-email@t.t" });
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: uid } });
+    expect(user.email).toBe("updated-email@t.t");
+    expect(await prisma.auditLog.count({ where: { action: "user.update", entityId: uid } })).toBeGreaterThan(0);
+
+    await expect(updateUser({ tenantId, actorId: adminId, isSuperAdmin: true, permissions: [], userId: uid, email: "admin@t.t" })).rejects.toMatchObject({ code: "conflict", message: "email_taken" });
+    await expect(updateUser({ tenantId, actorId: adminId, isSuperAdmin: true, permissions: [], userId: adminId, email: "newadmin@t.t" })).rejects.toMatchObject({ code: "forbidden", message: "cannot_edit_self" });
+  });
   /**
    * แก้จากต้นฉบับ brief: เดิมเคส "ห้ามระงับ SUPER_ADMIN คนสุดท้าย" ใช้ admin2 เป็นทั้ง actor และ
    * userId ในการเรียก setUserActive เดียวกัน — ชน guard cannot_edit_self (userId === actorId) ก่อน

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { useT } from "@/shared/lib/i18n/client";
 import { changePasswordAction } from "@/features/identity/actions";
@@ -46,8 +46,11 @@ export default function ChangePasswordPage() {
       <form onSubmit={onSubmit} className="fields">
         <div className="field"><label htmlFor="cur">{t("change.current")}</label><input id="cur" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required />{errors.cur && <span className="err">{errors.cur}</span>}</div>
         <div className="field"><label htmlFor="pw">{t("reset.newPassword")}</label><input id="pw" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required minLength={8} />{errors.pw && <span className="err">{errors.pw}</span>}</div>
-        <div className="field"><label htmlFor="pw2">{t("reset.confirmPassword")}</label><input id="pw2" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />{errors.pw2 && <span className="err">{errors.pw2}</span>}</div>
-        <Button type="submit" disabled={loading}>{t("common.save")}</Button>
+        <div className="field"><label htmlFor="pw2">{t("reset.confirmPassword")}</label><input id="pw2" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required minLength={8} />{errors.pw2 && <span className="err">{errors.pw2}</span>}</div>
+        <div className="flex items-center justify-between pt-2">
+          <Button type="button" variant="outline" onClick={() => signOut({ callbackUrl: "/login" })}>{t("account.logout")}</Button>
+          <Button type="submit" disabled={loading}>{t("common.save")}</Button>
+        </div>
       </form>
     </LiyonCard>
   );

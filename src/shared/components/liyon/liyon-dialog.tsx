@@ -39,7 +39,7 @@ export function LiyonDialog({ open, onOpenChange, danger, wide, children }: Liyo
             wide && "wide",
           )}
         >
-          <div className="box">{children}</div>
+          <div className="box flex max-h-[90vh] flex-col overflow-hidden">{children}</div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
@@ -54,7 +54,7 @@ export interface LiyonDialogCloseButtonProps {
 export function LiyonDialogCloseButton({ label }: LiyonDialogCloseButtonProps) {
   return (
     <DialogPrimitive.Close asChild>
-      <button type="button" className="icon-btn x" aria-label={label}>
+      <button type="button" className="icon-btn x z-10" aria-label={label}>
         <X aria-hidden="true" />
       </button>
     </DialogPrimitive.Close>
@@ -69,7 +69,7 @@ export interface LiyonDialogHeaderProps {
 
 export function LiyonDialogHeader({ title, description, titleId }: LiyonDialogHeaderProps) {
   return (
-    <div className="hd">
+    <div className="hd shrink-0">
       <DialogPrimitive.Title asChild {...(titleId ? { id: titleId } : {})}>
         <h2>{title}</h2>
       </DialogPrimitive.Title>
@@ -83,11 +83,18 @@ export function LiyonDialogHeader({ title, description, titleId }: LiyonDialogHe
 }
 
 export function LiyonDialogBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bd", className)}>{children}</div>;
+  return (
+    <div
+      className={cn("bd min-h-0 flex-1 overflow-y-auto", className)}
+      style={{ scrollbarWidth: "thin" }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function LiyonDialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("ft", className)}>{children}</div>;
+  return <div className={cn("ft shrink-0", className)}>{children}</div>;
 }
 
 export { DialogPrimitive as LiyonDialogPrimitive };

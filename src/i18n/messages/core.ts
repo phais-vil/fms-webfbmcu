@@ -52,6 +52,7 @@ export const MESSAGES: Dictionary = {
   "palette.pink": { th: "ชมพู", en: "Pink" },
   "palette.green": { th: "เขียว", en: "Green" },
   "palette.purple": { th: "ม่วง", en: "Purple" },
+  "palette.mourning": { th: "แสดงความไว้อาลัย", en: "Mourning" },
   "dash.title": { th: "แดชบอร์ด", en: "Dashboard" },
   "dash.users": { th: "ผู้ใช้ทั้งหมด", en: "Total users" },
   "dash.activeUsers": { th: "ผู้ใช้ที่ใช้งาน", en: "Active users" },

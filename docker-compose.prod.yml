@@ -1,5 +1,5 @@
 services:
-  # Web Application Service (Next.js 16)
+  # Web Application Service (Next.js 16 Standalone)
   web:
     build:
       context: .
@@ -8,19 +8,40 @@ services:
     restart: always
     ports:
       - "127.0.0.1:3010:3010" # Bind strictly to localhost (Reverse Proxy will forward 80/443)
+    env_file:
+      - path: .env.prod
+        required: false
+      - path: .env
+        required: false
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-fms_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fms_prod}?schema=public
       - AUTH_SECRET=${AUTH_SECRET}
-      - APP_URL=${APP_URL}
+      - AUTH_TRUST_HOST=true
+      - APP_URL=${APP_URL:-http://localhost:3010}
+      - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL}
+      - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD}
       - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
+      - MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID:-common}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3010/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - fms_uploads_data:/app/public/uploads
     networks:
       - fms_internal_network
 
@@ -29,6 +50,11 @@ services:
     image: postgres:16-alpine
     container_name: fms_postgres_prod
     restart: always
+    env_file:
+      - path: .env.prod
+        required: false
+      - path: .env
+        required: false
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fms_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -44,8 +70,22 @@ services:
     networks:
       - fms_internal_network
 
+  # Cloudflare Tunnel Service (Public HTTPS Internet Link)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: fms_cloudflare_tunnel
+    restart: always
+    command: tunnel --no-autoupdate --url http://web:3010
+    networks:
+      - fms_internal_network
+    depends_on:
+      web:
+        condition: service_healthy
+
 volumes:
   postgres_prod_data:
+    driver: local
+  fms_uploads_data:
     driver: local
 
 networks:

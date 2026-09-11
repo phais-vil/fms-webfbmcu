@@ -1,4 +1,4 @@
-import { auth } from "@/features/identity/server";
+import { auth, resolveTenantBrand } from "@/features/identity/server";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { PortalNavbar } from "./_components/portal-navbar";
@@ -9,9 +9,10 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, cookieLocale] = await Promise.all([
+  const [session, cookieLocale, brand] = await Promise.all([
     auth().catch(() => null),
     getLocaleCookie(),
+    resolveTenantBrand().catch(() => ({ nameTh: "", nameEn: "", logoUrl: null })),
   ]);
   const locale = cookieLocale ?? DEFAULT_LOCALE;
   const isThai = locale === "th";
@@ -19,7 +20,13 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Top Navigation Bar (Admin Theme Style with Portal Menus) */}
-      <PortalNavbar sessionUser={session?.user ?? null} isThai={isThai} />
+      <PortalNavbar
+        sessionUser={session?.user ?? null}
+        isThai={isThai}
+        tenantNameTh={brand.nameTh}
+        tenantNameEn={brand.nameEn}
+        logoUrl={brand.logoUrl}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1">{children}</main>

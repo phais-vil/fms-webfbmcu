@@ -4,11 +4,13 @@ import { sendMail } from "@/shared/lib/infra/mailer";
 import { errors } from "@/shared/lib/errors";
 import { asLocale } from "@/shared/lib/i18n/config";
 import { logger } from "@/shared/lib/infra/logger";
-import { SUPER_ADMIN_CODE } from "../../permissions";
+import { hashPassword } from "@/shared/lib/security/password";
+import { SUPER_ADMIN_CODE, DEFAULT_ROLES } from "../../permissions";
 import { issueToken, consumeToken, TOKEN_TTL } from "../tokens";
 import { writeAudit } from "../audit";
 import { passwordSetupEmail, emailChangeEmail } from "../email-templates";
 import type { ListUsersQuery, RoleAssignment } from "../validations/users";
+import type { RegisterInput } from "../validations/auth";
 import type { ScopeType } from "../grants";
 
 export interface UserListItem {
@@ -123,12 +125,18 @@ export async function createUser(input: Actor & { email: string; name: string; r
   return { user, rawToken, expiresAt, mailDelivered: delivered };
 }
 
-export async function updateUser(input: Actor & { userId: string; name?: string; roles?: RoleAssignment[]; mustChangePassword?: boolean }) {
+export async function updateUser(input: Actor & { userId: string; name?: string; email?: string; roles?: RoleAssignment[]; mustChangePassword?: boolean }) {
   if (input.userId === input.actorId && (input.roles !== undefined || input.mustChangePassword !== undefined)) throw errors.forbidden("cannot_edit_self");
   await prisma.$transaction(async (tx) => {
     const ut = await membership(input.userId, input.tenantId, tx);
     assertCanActOnTarget(ut.userRoles, input);
-    const before = { name: ut.user.name, roles: ut.userRoles.map((r) => ({ roleId: r.roleId, scopeType: r.scopeType, scopeId: r.scopeId })), mustChangePassword: ut.user.mustChangePassword };
+    const newEmail = input.email !== undefined ? input.email.trim().toLowerCase() : undefined;
+    if (newEmail !== undefined && newEmail !== ut.user.email.toLowerCase()) {
+      if (input.userId === input.actorId) throw errors.forbidden("cannot_edit_self");
+      const existing = await tx.user.findUnique({ where: { email: newEmail } });
+      if (existing) throw errors.conflict("email_taken");
+    }
+    const before = { name: ut.user.name, email: ut.user.email, roles: ut.userRoles.map((r) => ({ roleId: r.roleId, scopeType: r.scopeType, scopeId: r.scopeId })), mustChangePassword: ut.user.mustChangePassword };
     if (input.roles) {
       await assertRolesInTenant(input.roles, input.tenantId, tx);
       await assertCanAssignRoles(input.roles, input, tx);
@@ -139,10 +147,14 @@ export async function updateUser(input: Actor & { userId: string; name?: string;
       await tx.userRole.deleteMany({ where: { userTenantId: ut.id } });
       await tx.userRole.createMany({ data: input.roles.map((r) => ({ userTenantId: ut.id, ...r })) });
     }
-    if (input.name !== undefined || input.mustChangePassword !== undefined) {
-      await tx.user.update({ where: { id: input.userId }, data: { name: input.name, mustChangePassword: input.mustChangePassword } });
+    const updateData: { name?: string; email?: string; mustChangePassword?: boolean } = {};
+    if (input.name !== undefined) updateData.name = input.name;
+    if (newEmail !== undefined) updateData.email = newEmail;
+    if (input.mustChangePassword !== undefined) updateData.mustChangePassword = input.mustChangePassword;
+    if (Object.keys(updateData).length > 0) {
+      await tx.user.update({ where: { id: input.userId }, data: updateData });
     }
-    await writeAudit({ tenantId: input.tenantId, actorId: input.actorId, action: "user.update", entity: "user", entityId: input.userId, before, after: { name: input.name, roles: input.roles, mustChangePassword: input.mustChangePassword } }, tx);
+    await writeAudit({ tenantId: input.tenantId, actorId: input.actorId, action: "user.update", entity: "user", entityId: input.userId, before, after: { name: input.name, email: newEmail ?? ut.user.email, roles: input.roles, mustChangePassword: input.mustChangePassword } }, tx);
   });
 }
 
@@ -197,4 +209,113 @@ export async function confirmEmailChange(raw: string): Promise<boolean> {
     }
   });
   return true;
+}
+
+export async function registerPublicUser(input: RegisterInput) {
+  const email = input.email.trim().toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) throw errors.conflict("email_taken");
+
+  const tenant =
+    (await prisma.tenant.findUnique({ where: { code: "DEMO" } })) ??
+    (await prisma.tenant.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: "asc" },
+    }));
+  if (!tenant) throw errors.not_found("tenant_not_found");
+
+  const roleCode = input.userType === "STUDENT" ? "STUDENT" : "INSTRUCTOR";
+  const defaultRoleDef = DEFAULT_ROLES.find((r) => r.code === roleCode);
+
+  let role = await prisma.role.findUnique({
+    where: { tenantId_code: { tenantId: tenant.id, code: roleCode } },
+  });
+
+  if (!role && defaultRoleDef) {
+    role = await prisma.role.create({
+      data: {
+        tenantId: tenant.id,
+        code: defaultRoleDef.code,
+        nameTh: defaultRoleDef.nameTh,
+        nameEn: defaultRoleDef.nameEn,
+        isSystem: defaultRoleDef.isSystem,
+      },
+    });
+
+    if (defaultRoleDef.permissions.length > 0) {
+      const perms = await prisma.permission.findMany({
+        where: { code: { in: [...defaultRoleDef.permissions] } },
+        select: { id: true },
+      });
+      if (perms.length > 0) {
+        await prisma.rolePermission.createMany({
+          data: perms.map((p) => ({ roleId: role!.id, permissionId: p.id })),
+          skipDuplicates: true,
+        });
+      }
+    }
+  }
+
+  if (!role) throw errors.not_found("role_not_found");
+
+  const passwordHash = await hashPassword(input.password);
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        email,
+        name: input.name,
+        passwordHash,
+        emailVerified: true,
+        isActive: true,
+        mustChangePassword: false,
+      },
+    });
+
+    const ut = await tx.userTenant.create({
+      data: {
+        userId: user.id,
+        tenantId: tenant.id,
+        isActive: true,
+      },
+    });
+
+    await tx.userRole.create({
+      data: {
+        userTenantId: ut.id,
+        roleId: role!.id,
+        scopeType: "ALL",
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId: tenant.id,
+        actorId: user.id,
+        action: "user.register",
+        entity: "user",
+        entityId: user.id,
+        after: {
+          email,
+          name: input.name,
+          userType: input.userType,
+          phone: input.phone,
+          studentCode: input.studentCode,
+          degreeLevel: input.degreeLevel,
+          department: input.department,
+          academicTitle: input.academicTitle,
+          services: input.services,
+          roleCode,
+        },
+      },
+      tx
+    );
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      userType: input.userType,
+    };
+  });
 }

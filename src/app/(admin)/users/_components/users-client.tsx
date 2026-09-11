@@ -72,7 +72,7 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
   }
   function submitEdit(user: UserListItem) {
     start(async () => {
-      const r = await updateUserAction({ userId: user.id, name: form.name, roles: form.roleIds.map((id) => ({ roleId: id, scopeType: "ALL", scopeId: null })), mustChangePassword: form.mustChangePassword });
+      const r = await updateUserAction({ userId: user.id, name: form.name, email: form.email, roles: form.roleIds.map((id) => ({ roleId: id, scopeType: "ALL", scopeId: null })), mustChangePassword: form.mustChangePassword });
       if (!r.ok) return fail(r.error, t("users.editFail"));
       toast.success(t("users.editOk")); setDialog(null); void load();
     });

@@ -69,3 +69,99 @@
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
 }
+
+@layer liyon {
+  /* ══════════════════ MOURNING — โทนสีแสดงความไว้อาลัย (ขาว-ดำ-เทา) ══════════════════ */
+  [data-palette="mourning"] {
+    --bg-base: #E2E8F0;
+    --bg-light: #F8FAFC;
+    --bg-deep: #CBD5E1;
+    --glass: rgba(255, 255, 255, 0.88);
+    --glass-strong: rgba(255, 255, 255, 0.96);
+    --panel: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(30, 41, 59, 0.26);
+    --edge-top: rgba(255, 255, 255, 0.9);
+    --edge-left: rgba(255, 255, 255, 0.7);
+    --half-light: rgba(255, 255, 255, 1);
+    --half-shade: rgba(255, 255, 255, 0);
+    --edge-grad: linear-gradient(128deg,
+      rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.72) 22%,
+      rgba(156, 163, 175, 0.70) 40%, rgba(107, 114, 128, 0.88) 58%, rgba(55, 65, 81, 0.78) 74%,
+      rgba(30, 41, 59, 0.28) 100%);
+    --edge-grad-h: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.75) 0%, rgba(107, 114, 128, 0.85) 45%,
+      rgba(55, 65, 81, 0.70) 70%, rgba(30, 41, 59, 0.22) 100%);
+    --text: #0F172A;
+    --text-2: #334155;
+    --text-muted: #64748B;
+    --text-inverse: #FFFFFF;
+    --brand: #1E293B;
+    --brand-light: #475569;
+    --brand-deep: #0F172A;
+    --brand-ink: #0F172A;
+    --brand-glow: rgba(15, 23, 42, 0.32);
+    --brand2: #475569;
+    --brand2-light: #94A3B8;
+    --brand2-glow: rgba(71, 85, 105, 0.25);
+    --on-brand: #FFFFFF;
+    --rose: #E2E8F0;
+    --ink-band: #0F172A;
+    --ink-band-text: #F8FAFC;
+    --ink-band-muted: #94A3B8;
+    --glass-hover: rgba(226, 232, 240, 0.90);
+    --shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.40);
+    --shadow-btn: 0 12px 30px -16px rgba(15, 23, 42, 0.55);
+    --r-lg: 8px;
+    --r-md: 6px;
+    --r-sm: 4px;
+    --r-ctl: 6px;
+    --gutter: 56px;
+  }
+
+  [data-palette="mourning"][data-theme="dark"],
+  [data-palette="mourning"].dark {
+    --bg-base: #0F172A;
+    --bg-light: #1E293B;
+    --bg-deep: #020617;
+    --glass: rgba(255, 255, 255, 0.08);
+    --glass-strong: rgba(15, 23, 42, 0.7);
+    --panel: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --edge-top: rgba(255, 255, 255, 0.25);
+    --edge-left: rgba(255, 255, 255, 0.15);
+    --half-light: rgba(255, 255, 255, 0.10);
+    --half-shade: rgba(0, 0, 0, 0.12);
+    --edge-grad: linear-gradient(128deg,
+      rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.18) 22%,
+      rgba(156, 163, 175, 0.50) 40%, rgba(107, 114, 128, 0.60) 58%, rgba(75, 85, 99, 0.55) 74%,
+      rgba(255, 255, 255, 0.10) 100%);
+    --edge-grad-h: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.22) 0%, rgba(107, 114, 128, 0.60) 45%,
+      rgba(75, 85, 99, 0.48) 70%, rgba(255, 255, 255, 0.08) 100%);
+    --text: #F8FAFC;
+    --text-2: #CBD5E1;
+    --text-muted: #94A3B8;
+    --text-inverse: #FFFFFF;
+    --brand-ink: #E2E8F0;
+    --brand-glow: rgba(255, 255, 255, 0.15);
+    --brand2: #64748B;
+    --brand2-light: #94A3B8;
+    --brand2-glow: rgba(100, 116, 139, 0.22);
+    --rose: rgba(255, 255, 255, 0.1);
+    --ink-band: #020617;
+    --ink-band-text: #F8FAFC;
+    --ink-band-muted: #94A3B8;
+    --glass-hover: rgba(255, 255, 255, 0.12);
+    --shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.65);
+    --shadow-btn: 0 12px 30px -14px rgba(0, 0, 0, 0.75);
+  }
+
+  /* ปรับโทนภาพให้นุ่มนวลสำรวมเพื่อแสดงความไว้อาลัย (Respectful Desaturation) */
+  [data-palette="mourning"] img:not([data-keep-color]) {
+    filter: grayscale(85%);
+    transition: filter 0.3s ease;
+  }
+  [data-palette="mourning"] img:not([data-keep-color]):hover {
+    filter: grayscale(0%);
+  }
+}

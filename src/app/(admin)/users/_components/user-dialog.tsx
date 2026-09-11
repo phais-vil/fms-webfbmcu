@@ -54,14 +54,26 @@ export function UserDialog({
             <input id="user-name" value={form.name} placeholder={t("users.namePh")} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required disabled={isSelf} />
           </LiyonField>
           <LiyonField label={t("users.email")} htmlFor="user-email">
-            <input id="user-email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required disabled={mode === "edit"} />
+            <input id="user-email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required disabled={isSelf} />
           </LiyonField>
           <LiyonField label={t("users.roles")} hint={isSelf ? t("users.cannotEditSelf") : t("users.rolesHint")}>
-            <div className="flex flex-col gap-2">
+            <div
+              className="flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-border/60 bg-muted/20 p-2.5 pr-2"
+              style={{ scrollbarWidth: "thin" }}
+            >
               {assignableRoles.map((role) => (
-                <label key={role.id} htmlFor={`role-${role.id}`} className="flex items-center gap-2 text-sm">
-                  <Checkbox id={`role-${role.id}`} checked={form.roleIds.includes(role.id)} onCheckedChange={(c) => toggleRole(role.id, c === true)} disabled={isSelf} />
-                  {localizedName(role, locale)}
+                <label
+                  key={role.id}
+                  htmlFor={`role-${role.id}`}
+                  className="flex items-center gap-2 rounded-md p-1.5 text-sm hover:bg-background/80 transition-colors cursor-pointer"
+                >
+                  <Checkbox
+                    id={`role-${role.id}`}
+                    checked={form.roleIds.includes(role.id)}
+                    onCheckedChange={(c) => toggleRole(role.id, c === true)}
+                    disabled={isSelf}
+                  />
+                  <span>{localizedName(role, locale)}</span>
                 </label>
               ))}
             </div>

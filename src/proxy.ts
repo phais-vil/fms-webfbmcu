@@ -6,6 +6,7 @@ const PUBLIC_PREFIXES = [
   "/reset-password/",
   "/verify-email/",
   "/api/auth/",
+  "/api/health",
   "/_next/",
   "/favicon.ico",
   "/news",
@@ -18,16 +19,19 @@ const PUBLIC_PREFIXES = [
   "/documents",
   "/projects",
   "/about",
+  "/uploads",
+  "/images",
 ];
 const PUBLIC_EXACT = ["/"];
-const GUEST_ONLY = ["/login", "/forgot-password"];
+const GUEST_ONLY = ["/login", "/register", "/forgot-password"];
 
 /** ด่านตรวจระดับ route — ไม่แตะ DB (edge) · สิทธิ์ละเอียดตรวจใน Server Action ผ่าน requirePermission */
 export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const isPublic = PUBLIC_EXACT.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
-  const secureCookie = (process.env.APP_URL ?? "").startsWith("https://");
+  const proto = req.headers.get("x-forwarded-proto");
+  const secureCookie = proto === "https" || req.nextUrl.protocol === "https:" || (process.env.APP_URL ?? "").startsWith("https://");
   const token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie });
   const loggedIn = !!token && !token.invalid && !!token.userId;
 

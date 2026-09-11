@@ -71,22 +71,33 @@ export function RoleDialog({
             <textarea id="role-desc" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
           </LiyonField>
           <LiyonField label={t("roles.perms")}>
-            <div className="flex flex-col gap-3">
+            <div
+              className="flex max-h-72 flex-col gap-4 overflow-y-auto rounded-lg border border-border/60 bg-muted/20 p-3.5 pr-2"
+              style={{ scrollbarWidth: "thin" }}
+            >
               {modules.map((module) => (
                 <fieldset key={module} className="flex flex-col gap-2">
-                  <legend>{t(`roles.module.${module}`)}</legend>
-                  {permissions
-                    .filter((p) => p.module === module)
-                    .map((p) => (
-                      <label key={p.code} htmlFor={`perm-${p.code}`} className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          id={`perm-${p.code}`}
-                          checked={form.permissionCodes.includes(p.code)}
-                          onCheckedChange={(c) => togglePermission(p.code, c === true)}
-                        />
-                        {t(`perm.${p.code}`)}
-                      </label>
-                    ))}
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                    {t(`roles.module.${module}`)}
+                  </legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {permissions
+                      .filter((p) => p.module === module)
+                      .map((p) => (
+                        <label
+                          key={p.code}
+                          htmlFor={`perm-${p.code}`}
+                          className="flex items-center gap-2 rounded-md p-1.5 text-sm hover:bg-background/80 transition-colors cursor-pointer"
+                        >
+                          <Checkbox
+                            id={`perm-${p.code}`}
+                            checked={form.permissionCodes.includes(p.code)}
+                            onCheckedChange={(c) => togglePermission(p.code, c === true)}
+                          />
+                          <span className="truncate">{t(`perm.${p.code}`)}</span>
+                        </label>
+                      ))}
+                  </div>
                 </fieldset>
               ))}
             </div>

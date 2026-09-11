@@ -23,4 +23,6 @@ export const DEFAULT_ROLES: ReadonlyArray<{ code: string; nameTh: string; nameEn
   { code: "ADMIN", nameTh: "ผู้ดูแลระบบ", nameEn: "Administrator", isSystem: false, permissions: [P.usersRead, P.usersManage, P.rolesManage, P.settingsManage, P.auditRead] },
   { code: "STAFF", nameTh: "เจ้าหน้าที่", nameEn: "Staff", isSystem: false, permissions: [P.usersRead] },
   { code: "VIEWER", nameTh: "ผู้ดู", nameEn: "Viewer", isSystem: false, permissions: [P.usersRead] },
+  { code: "INSTRUCTOR", nameTh: "อาจารย์ / บุคลากร", nameEn: "Instructor / Faculty", isSystem: false, permissions: ["rooms:read", "rooms:book", "document:read", "document:create", "student:read"] },
+  { code: "STUDENT", nameTh: "นิสิต / นักศึกษา", nameEn: "Student", isSystem: false, permissions: ["rooms:read", "rooms:book", "student:read"] },
 ];

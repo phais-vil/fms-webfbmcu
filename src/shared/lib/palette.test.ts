@@ -8,6 +8,7 @@ describe("palette", () => {
   });
   it("isPalette รับเฉพาะ id ที่รู้จัก", () => {
     expect(isPalette("green")).toBe(true);
+    expect(isPalette("mourning")).toBe(true);
     expect(isPalette("teal")).toBe(false);
     expect(isPalette(null)).toBe(false);
   });

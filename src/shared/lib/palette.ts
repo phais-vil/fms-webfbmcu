@@ -1,4 +1,4 @@
-export const PALETTE_IDS = ["blue", "coral", "pink", "green", "purple"] as const;
+export const PALETTE_IDS = ["blue", "coral", "pink", "green", "purple", "mourning"] as const;
 export type PaletteId = (typeof PALETTE_IDS)[number];
 export const DEFAULT_PALETTE: PaletteId = "blue";
 
@@ -8,6 +8,7 @@ export const PALETTES: Record<PaletteId, { swatch: string; labelKey: string }> =
   pink: { swatch: "#C2185B", labelKey: "palette.pink" },
   green: { swatch: "#0F7A5A", labelKey: "palette.green" },
   purple: { swatch: "#6D28D9", labelKey: "palette.purple" },
+  mourning: { swatch: "#1E293B", labelKey: "palette.mourning" },
 };
 
 export function isPalette(v: unknown): v is PaletteId {
