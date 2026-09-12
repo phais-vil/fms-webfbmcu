@@ -5,8 +5,8 @@ import { getLocale } from "@/shared/lib/i18n/server";
 import { zodErrorMap } from "@/shared/lib/i18n/zod-locale";
 import { P } from "../../permissions";
 import { requirePermission } from "../rbac";
-import { updateSettingsSchema, testSmtpSchema } from "../validations/settings";
-import { getTenantSettings, updateTenantSettings, testSmtpConnection, type TenantSettings } from "../services/tenant.service";
+import { updateSettingsSchema, testSmtpSchema, testGeminiSchema } from "../validations/settings";
+import { getTenantSettings, updateTenantSettings, testSmtpConnection, testGeminiConnection, type TenantSettings } from "../services/tenant.service";
 
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -39,6 +39,18 @@ export async function testSmtpAction(input: unknown): Promise<ActionResult<{ ok:
       tenantId: ctx.tenantId,
       recipient: parsed.recipient,
       smtp: parsed.smtp,
+    });
+  });
+}
+
+export async function testGeminiAction(input: unknown): Promise<ActionResult<{ ok: boolean; error?: string; modelUsed?: string }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const parsed = testGeminiSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    return testGeminiConnection({
+      tenantId: ctx.tenantId,
+      apiKey: parsed.apiKey,
+      model: parsed.model,
     });
   });
 }

@@ -54,3 +54,25 @@ export const updateCurriculumSchema = z.object({
 export type CreateCurriculumInput = z.infer<typeof createCurriculumSchema>;
 export type UpdateCurriculumInput = z.infer<typeof updateCurriculumSchema>;
 export type DegreeLevel = z.infer<typeof DegreeLevelEnum>;
+
+export const createDepartmentSchema = z.object({
+  code: z.string().trim().min(2, "กรุณาระบุรหัสภาควิชาอย่างน้อย 2 ตัวอักษร").max(50),
+  nameTh: z.string().trim().min(2, "กรุณาระบุชื่อภาควิชาภาษาไทย").max(100),
+  nameEn: z.string().trim().min(2, "Please enter English department name").max(100),
+  description: z.string().trim().max(500).optional().nullable(),
+  displayOrder: z.coerce.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+
+export const updateDepartmentSchema = z.object({
+  id: z.string().uuid(),
+  code: z.string().trim().min(2).max(50).optional(),
+  nameTh: z.string().trim().min(2).max(100).optional(),
+  nameEn: z.string().trim().min(2).max(100).optional(),
+  description: z.string().trim().max(500).optional().nullable(),
+  displayOrder: z.coerce.number().int().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;
+export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;

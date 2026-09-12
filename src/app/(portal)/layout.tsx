@@ -12,7 +12,7 @@ export default async function PortalLayout({
   const [session, cookieLocale, brand] = await Promise.all([
     auth().catch(() => null),
     getLocaleCookie(),
-    resolveTenantBrand().catch(() => ({ nameTh: "", nameEn: "", logoUrl: null })),
+    resolveTenantBrand().catch(() => ({ nameTh: "", nameEn: "", logoUrl: null, contact: undefined })),
   ]);
   const locale = cookieLocale ?? DEFAULT_LOCALE;
   const isThai = locale === "th";
@@ -32,7 +32,13 @@ export default async function PortalLayout({
       <main className="flex-1">{children}</main>
 
       {/* Faculty Portal Footer */}
-      <PortalFooter isThai={isThai} />
+      <PortalFooter
+        isThai={isThai}
+        tenantNameTh={brand.nameTh}
+        tenantNameEn={brand.nameEn}
+        logoUrl={brand.logoUrl}
+        contact={brand.contact}
+      />
     </div>
   );
 }

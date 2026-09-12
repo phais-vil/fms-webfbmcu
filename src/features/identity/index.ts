@@ -10,5 +10,11 @@ export type { RegisterInput } from "./_internal/validations/auth";
 export type { UserListItem } from "./_internal/services/user.service";
 export type { RoleItem } from "./_internal/services/role.service";
 export type { RoleAssignment, ListUsersQuery } from "./_internal/validations/users";
-export type { TenantSettings, TenantSmtpSettingsView, TenantBrandInfo } from "./_internal/services/tenant.service";
+export type { TenantSettings, TenantSmtpSettingsView, TenantGeminiSettingsView, TenantBrandInfo, TenantContactSettingsView } from "./_internal/services/tenant.service";
+export type { ImportResult } from "./_internal/services/user-csv.service";
+export { csvUserRowSchema } from "./_internal/validations/users-csv";
+export type { CsvUserRow, ImportUsersOptions } from "./_internal/validations/users-csv";
+export { contactSettingsSchema } from "./_internal/validations/settings";
+export type { ContactSettingsInput } from "./_internal/validations/settings";
+
 

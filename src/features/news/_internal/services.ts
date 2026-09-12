@@ -1,6 +1,8 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma, NewsStatus } from "@/generated/prisma";
-import type { CreateNewsArticleInput, UpdateNewsArticleInput } from "./validations";
+import { errors } from "@/shared/lib/errors";
+import { getTenantGeminiConfig } from "@/features/identity/server";
+import type { CreateNewsArticleInput, UpdateNewsArticleInput, TranslateNewsInput } from "./validations";
 
 export interface NewsCategoryDto {
   id: string;
@@ -348,3 +350,101 @@ export async function togglePublishNewsArticle(tenantId: string, id: string): Pr
   const newStatus = article.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
   return updateNewsArticle(tenantId, { id, status: newStatus });
 }
+
+export interface TranslatedNewsResult {
+  titleEn: string;
+  summaryEn: string;
+  contentEn: string;
+}
+
+export async function translateNewsWithGemini(
+  tenantId: string,
+  input: TranslateNewsInput
+): Promise<TranslatedNewsResult> {
+  const geminiConfig = await getTenantGeminiConfig(tenantId);
+  if (!geminiConfig.enabled || !geminiConfig.apiKey) {
+    throw errors.validation("news.geminiNotConfigured", {
+      gemini: ["news.geminiNotConfigured"],
+    });
+  }
+
+  const model = geminiConfig.model || "gemini-2.5-flash";
+  const apiKey = geminiConfig.apiKey;
+
+  const prompt = `You are a professional university public relations officer, translator, and editor for a prestigious Buddhist and higher education academic institution (Faculty of Buddhism, Mahachulalongkornrajavidyalaya University).
+Your task is to translate and adapt the following Thai news announcement into natural, fluent, dignified, and professional English suitable for a formal academic faculty website.
+
+=== THAI NEWS ARTICLE INPUT ===
+Title (Thai):
+${input.titleTh}
+
+Summary / Excerpt (Thai):
+${input.summaryTh ? input.summaryTh : "(No summary provided. Please compose a concise 1-2 sentence English summary based on the article content)"}
+
+Content (Thai):
+${input.contentTh ? input.contentTh : input.titleTh}
+
+=== INSTRUCTIONS ===
+1. Translate "Title (Thai)" into a clear, compelling, and grammatically impeccable English headline ("titleEn").
+2. Translate or synthesize "Summary (Thai)" into an engaging, clear 1-2 sentence executive summary / excerpt ("summaryEn").
+3. Translate "Content (Thai)" into a well-structured, polished English news article body ("contentEn"). Maintain paragraphs, academic tone, and proper naming conventions.
+4. Output MUST be ONLY a valid JSON object strictly matching this schema:
+{
+  "titleEn": "string",
+  "summaryEn": "string",
+  "contentEn": "string"
+}
+Do not enclose in markdown code blocks if possible, or output strictly valid JSON.`;
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: "application/json",
+        },
+      }),
+    });
+  } catch (e) {
+    throw errors.validation("news.geminiConnectionError", {
+      gemini: [e instanceof Error ? e.message : "Failed to connect to Gemini API"],
+    });
+  }
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => null);
+    const msg = errBody?.error?.message || `Gemini API Error ${res.status}: ${res.statusText}`;
+    throw errors.validation("news.geminiApiError", { gemini: [msg] });
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw errors.validation("news.geminiEmptyResponse", { gemini: ["Gemini returned an empty response"] });
+  }
+
+  try {
+    const jsonStr = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+    const parsed = JSON.parse(jsonStr);
+    return {
+      titleEn: typeof parsed.titleEn === "string" ? parsed.titleEn : "",
+      summaryEn: typeof parsed.summaryEn === "string" ? parsed.summaryEn : "",
+      contentEn: typeof parsed.contentEn === "string" ? parsed.contentEn : "",
+    };
+  } catch {
+    throw errors.validation("news.geminiParseError", {
+      gemini: ["Failed to parse AI translation output as JSON"],
+    });
+  }
+}
+

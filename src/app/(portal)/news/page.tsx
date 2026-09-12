@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { BookOpen, Calendar, Eye, Search } from "lucide-react";
+import { BookOpen, Calendar, Eye, Search, Newspaper } from "lucide-react";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { formatDate } from "@/shared/lib/format";
+import { getSessionContext, hasPermission } from "@/features/identity/server";
+import { NEWS_P } from "@/features/news";
 import {
   resolvePublicTenantId,
   listPublicNewsArticles,
@@ -18,6 +20,9 @@ export default async function PublicNewsPage({
   const cookieLocale = await getLocaleCookie();
   const locale = cookieLocale ?? DEFAULT_LOCALE;
   const isThai = locale === "th";
+
+  const session = await getSessionContext();
+  const canManageNews = session ? (hasPermission(session, NEWS_P.newsRead) || hasPermission(session, NEWS_P.newsCreate)) : false;
 
   const tenantId = await resolvePublicTenantId();
   const [categories, articles] = await Promise.all([
@@ -41,6 +46,17 @@ export default async function PublicNewsPage({
             ? "ติดตามข่าวสาร งานประชุมวิชาการ ทุนการศึกษา และกิจกรรมสำคัญของคณะพุทธศาสตร์"
             : "Explore latest news, conferences, scholarships, and activities from the Faculty of Buddhism"}
         </p>
+        {canManageNews && (
+          <div className="pt-2">
+            <Link
+              href="/admin/news"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <Newspaper className="h-3.5 w-3.5" />
+              {isThai ? "จัดการข่าวสาร (สำหรับผู้ดูแลระบบ)" : "Manage News (Admin Panel)"}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Category Pills & Search */}

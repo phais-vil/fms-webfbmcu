@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Search, Pin, Eye, Edit, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Plus, Search, Pin, Eye, Edit, Trash2, CheckCircle2, XCircle, Sparkles, Loader2 } from "lucide-react";
+
+const TinyEditor = dynamic(() => import("@/shared/components/liyon").then((mod) => mod.TinyEditor), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 border border-border rounded-lg bg-muted/20 animate-pulse flex items-center justify-center text-xs text-muted-foreground">
+      กำลังโหลด Tiny Editor...
+    </div>
+  ),
+});
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +34,7 @@ import {
   deleteNewsArticleAction,
   togglePinNewsArticleAction,
   togglePublishNewsArticleAction,
+  translateNewsAction,
 } from "@/features/news/actions";
 
 interface NewsClientProps {
@@ -121,6 +132,42 @@ export function NewsAdminClient({
       isPinned: article.isPinned,
     });
     setDialogOpen(true);
+  };
+
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleAiTranslate = async () => {
+    if (!form.titleTh.trim()) {
+      toast.error(t("news.aiRequireThaiTitle"));
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const res = await translateNewsAction({
+        titleTh: form.titleTh,
+        summaryTh: form.summaryTh,
+        contentTh: form.contentTh,
+      });
+
+      if (!res.ok) {
+        toast.error(res.error?.message || t("news.geminiApiError"));
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        titleEn: res.data.titleEn || prev.titleEn,
+        summaryEn: res.data.summaryEn || prev.summaryEn,
+        contentEn: res.data.contentEn || prev.contentEn,
+      }));
+
+      toast.success(t("news.aiTranslateSuccess"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("news.geminiApiError"));
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const handleSave = () => {
@@ -425,6 +472,43 @@ export function NewsAdminClient({
               </LiyonSelect>
             </LiyonField>
 
+            {/* AI Assistant Banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border border-purple-200 bg-purple-50/60 dark:border-purple-900/40 dark:bg-purple-950/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 shrink-0">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="font-semibold text-xs text-purple-950 dark:text-purple-200 block">
+                    {t("news.aiAssistant")}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    กรอกข้อมูลภาษาไทย แล้วกดปุ่มนี้เพื่อให้ AI แปลและสร้างภาษาอังกฤษให้อัตโนมัติ
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAiTranslate}
+                disabled={isPending || isTranslating || !form.titleTh.trim()}
+                className="border-purple-300 hover:bg-purple-100 hover:text-purple-900 dark:border-purple-700 dark:hover:bg-purple-900/50 text-xs shrink-0 font-medium"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin text-purple-600" />
+                    {t("news.aiTranslating")}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    {t("news.aiTranslateBtn")}
+                  </>
+                )}
+              </Button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <LiyonField label={t("news.field.titleTh")} htmlFor="title-th">
                 <input
@@ -474,26 +558,22 @@ export function NewsAdminClient({
             </div>
 
             <LiyonField label={t("news.field.contentTh")} htmlFor="content-th">
-              <textarea
+              <TinyEditor
                 id="content-th"
-                rows={5}
                 value={form.contentTh}
-                onChange={(e) => setForm((f) => ({ ...f, contentTh: e.target.value }))}
-                placeholder="เนื้อหาข่าวแบบละเอียด..."
-                className="w-full p-2 border rounded bg-background text-sm"
-                required
+                onChange={(content) => setForm((f) => ({ ...f, contentTh: content }))}
+                placeholder="พิมพ์เนื้อหาข่าวแบบละเอียด และจัดรูปแบบข้อความ..."
+                height={300}
               />
             </LiyonField>
 
             <LiyonField label={t("news.field.contentEn")} htmlFor="content-en">
-              <textarea
+              <TinyEditor
                 id="content-en"
-                rows={5}
                 value={form.contentEn}
-                onChange={(e) => setForm((f) => ({ ...f, contentEn: e.target.value }))}
-                placeholder="Full article content in English..."
-                className="w-full p-2 border rounded bg-background text-sm"
-                required
+                onChange={(content) => setForm((f) => ({ ...f, contentEn: content }))}
+                placeholder="Full article content in English with rich formatting..."
+                height={300}
               />
             </LiyonField>
 

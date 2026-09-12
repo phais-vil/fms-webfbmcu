@@ -29,5 +29,12 @@ export const updateNewsArticleSchema = z.object({
   status: newsStatusSchema.optional(),
 });
 
+export const translateNewsSchema = z.object({
+  titleTh: z.string().trim().min(1, "news.aiRequireThaiTitle"),
+  summaryTh: z.string().trim().optional().default(""),
+  contentTh: z.string().trim().optional().default(""),
+});
+
 export type CreateNewsArticleInput = z.infer<typeof createNewsArticleSchema>;
 export type UpdateNewsArticleInput = z.infer<typeof updateNewsArticleSchema>;
+export type TranslateNewsInput = z.infer<typeof translateNewsSchema>;

@@ -12,13 +12,42 @@ import {
   QrCode,
   Sparkles,
   Globe,
+  MessageCircle,
 } from "lucide-react";
+import type { TenantContactSettingsView } from "@/features/identity";
 
 interface PortalFooterProps {
   isThai: boolean;
+  tenantNameTh?: string;
+  tenantNameEn?: string;
+  logoUrl?: string | null;
+  contact?: TenantContactSettingsView;
 }
 
-export function PortalFooter({ isThai }: PortalFooterProps) {
+export function PortalFooter({
+  isThai,
+  tenantNameTh,
+  tenantNameEn,
+  logoUrl,
+  contact,
+}: PortalFooterProps) {
+  const orgName = isThai
+    ? (tenantNameTh || "คณะพุทธศาสตร์ มจร")
+    : (tenantNameEn || "Faculty of Buddhism, MCU");
+  const phone = contact?.phone || "035-248-000 ต่อ 8100, 8102 (สำนักงานคณบดี)";
+  const cleanPhone = phone.replace(/[^\d+]/g, "");
+  const email = contact?.email || "buddhism@mcu.ac.th";
+  const address = isThai
+    ? (contact?.addressTh || "79 หมู่ที่ 1 ถนนพหลโยธิน ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170")
+    : (contact?.addressEn || "79 Moo 1, Phahonyothin Rd., Lam Sai, Wang Noi, Phra Nakhon Si Ayutthaya 13170 Thailand");
+  const workingHours = isThai
+    ? (contact?.workingHoursTh || "วันจันทร์ - วันศุกร์ เวลา 08:30 - 16:30 น. (ยกเว้นวันหยุดราชการ)")
+    : (contact?.workingHoursEn || "Monday - Friday 08:30 - 16:30 (Excluding Public Holidays)");
+  const website = contact?.website || "https://www.mcu.ac.th";
+  const facebook = contact?.facebook;
+  const lineId = contact?.lineId;
+  const mapUrl = contact?.mapUrl;
+
   return (
     <footer className="border-t border-border bg-gradient-to-b from-background via-muted/20 to-muted/50 text-foreground transition-colors">
       {/* 1. Value Proposition / Quality Assurance Strip */}
@@ -90,12 +119,20 @@ export function PortalFooter({ isThai }: PortalFooterProps) {
           {/* Column 1: Identity & Official Contacts (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-transform group-hover:scale-105">
-                <GraduationCap className="h-6 w-6" />
-              </div>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={orgName}
+                  className="h-11 w-11 rounded-xl object-contain bg-background p-1 border shadow-xs"
+                />
+              ) : (
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-transform group-hover:scale-105">
+                  <GraduationCap className="h-6 w-6" />
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="font-bold text-lg leading-tight tracking-tight text-foreground">
-                  {isThai ? "คณะพุทธศาสตร์" : "Faculty of Buddhism"}
+                  {orgName}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {isThai
@@ -114,31 +151,76 @@ export function PortalFooter({ isThai }: PortalFooterProps) {
             <div className="space-y-2.5 pt-2 text-xs text-muted-foreground">
               <div className="flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <span>
-                  {isThai
-                    ? "79 หมู่ที่ 1 ถนนพหลโยธิน ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170"
-                    : "79 Moo 1, Phahonyothin Rd., Lam Sai, Wang Noi, Phra Nakhon Si Ayutthaya 13170 Thailand"}
-                </span>
+                {mapUrl ? (
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-primary transition-colors flex items-center gap-1 group/map"
+                  >
+                    <span>{address}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0 opacity-70 group-hover/map:opacity-100" />
+                  </a>
+                ) : (
+                  <span>{address}</span>
+                )}
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="h-4 w-4 text-primary shrink-0" />
-                <span>035-248-000 {isThai ? "ต่อ 8100, 8102 (สำนักงานคณบดี)" : "Ext. 8100, 8102"}</span>
+                <a href={`tel:${cleanPhone}`} className="hover:text-primary transition-colors">
+                  {phone}
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 text-primary shrink-0" />
-                <a href="mailto:buddhism@mcu.ac.th" className="hover:text-primary transition-colors">
-                  buddhism@mcu.ac.th
+                <a href={`mailto:${email}`} className="hover:text-primary transition-colors">
+                  {email}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="h-4 w-4 text-primary shrink-0" />
-                <span>
-                  {isThai
-                    ? "วันจันทร์ - วันศุกร์ เวลา 08:30 - 16:30 น. (ยกเว้นวันหยุดราชการ)"
-                    : "Monday - Friday 08:30 - 16:30 (Excluding Public Holidays)"}
-                </span>
+                <span>{workingHours}</span>
               </div>
             </div>
+
+            {/* Social Media Links */}
+            {(facebook || lineId || mapUrl) && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {facebook && (
+                  <a
+                    href={facebook.startsWith("http") ? facebook : `https://${facebook}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 text-xs font-medium transition-colors"
+                  >
+                    <span>Facebook</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {lineId && (
+                  <a
+                    href={lineId.startsWith("http") ? lineId : `https://line.me/R/ti/p/~${lineId.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600/10 text-emerald-600 hover:bg-emerald-600/20 text-xs font-medium transition-colors"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    <span>LINE {lineId.startsWith("@") ? lineId : `@${lineId}`}</span>
+                  </a>
+                )}
+                {mapUrl && (
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground text-xs font-medium transition-colors"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span>Google Maps</span>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Column 2: หลักสูตรการศึกษา (2-3 cols) */}
@@ -278,12 +360,12 @@ export function PortalFooter({ isThai }: PortalFooterProps) {
               </li>
               <li>
                 <a
-                  href="https://www.mcu.ac.th"
+                  href={website.startsWith("http") ? website : `https://${website}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-primary transition-colors flex items-center gap-1 group"
                 >
-                  <span className="truncate">{isThai ? "เว็บไซต์หลัก มจร" : "MCU Portal"}</span>
+                  <span className="truncate">{isThai ? "เว็บไซต์ทางการ" : "Official Website"}</span>
                   <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 ml-0.5" />
                 </a>
               </li>
@@ -306,7 +388,7 @@ export function PortalFooter({ isThai }: PortalFooterProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <div className="text-center sm:text-left">
             <p>
-              © 2026 {isThai ? "คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย" : "Faculty of Buddhism, Mahachulalongkornrajavidyalaya University"}.
+              © 2026 {orgName}.
               {" "}{isThai ? "สงวนลิขสิทธิ์ทั้งหมด" : "All rights reserved."}
             </p>
           </div>

@@ -93,9 +93,16 @@ export default async function NewsDetailPage({
       )}
 
       {/* Article Content */}
-      <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed text-base sm:text-lg whitespace-pre-line py-4">
-        {content}
-      </div>
+      {/<[a-z][\s\S]*>/i.test(content) ? (
+        <div
+          className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed text-base sm:text-lg py-4"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      ) : (
+        <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed text-base sm:text-lg whitespace-pre-line py-4">
+          {content}
+        </div>
+      )}
 
       {/* Footer Share & Back */}
       <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">

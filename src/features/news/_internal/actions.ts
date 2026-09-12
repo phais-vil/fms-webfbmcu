@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { runAction, type ActionResult } from "@/shared/lib/result";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { zodErrorMap } from "@/shared/lib/i18n/zod-locale";
-import { requirePermission } from "@/features/identity/server";
+import { requirePermission, requireSession, hasPermission } from "@/features/identity/server";
+import { errors } from "@/shared/lib/errors";
 import { NEWS_P } from "../permissions";
-import { createNewsArticleSchema, updateNewsArticleSchema } from "./validations";
+import { createNewsArticleSchema, updateNewsArticleSchema, translateNewsSchema } from "./validations";
 import {
   listNewsCategories,
   listAdminNewsArticles,
@@ -15,8 +16,10 @@ import {
   deleteNewsArticle,
   togglePinNewsArticle,
   togglePublishNewsArticle,
+  translateNewsWithGemini,
   type NewsArticleDto,
   type NewsCategoryDto,
+  type TranslatedNewsResult,
 } from "./services";
 
 export async function getNewsCategoriesAction(): Promise<ActionResult<NewsCategoryDto[]>> {
@@ -85,5 +88,16 @@ export async function togglePublishNewsArticleAction(id: string): Promise<Action
     revalidatePath("/news");
     revalidatePath("/");
     return result;
+  });
+}
+
+export async function translateNewsAction(input: unknown): Promise<ActionResult<TranslatedNewsResult>> {
+  return runAction(async () => {
+    const ctx = await requireSession();
+    if (!hasPermission(ctx, NEWS_P.newsCreate) && !hasPermission(ctx, NEWS_P.newsEdit)) {
+      throw errors.forbidden("forbidden:news:create_or_edit");
+    }
+    const parsed = translateNewsSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    return translateNewsWithGemini(ctx.tenantId, parsed);
   });
 }

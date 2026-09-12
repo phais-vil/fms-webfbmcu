@@ -2,13 +2,13 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, X, Loader2, Building2, Mail, Send, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Upload, X, Loader2, Building2, Mail, Send, Eye, EyeOff, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiyonCard, LiyonField, LiyonSelect, LiyonSwitchRow, PalettePicker } from "@/shared/components/liyon";
 import { useT } from "@/shared/lib/i18n/client";
 import type { PaletteId } from "@/shared/lib/palette";
 import type { TenantSettings } from "@/features/identity";
-import { updateSettingsAction, uploadLogoAction, testSmtpAction } from "@/features/identity/actions";
+import { updateSettingsAction, uploadLogoAction, testSmtpAction, testGeminiAction } from "@/features/identity/actions";
 
 export function SettingsForm({ initial }: { initial: TenantSettings }) {
   const t = useT();
@@ -29,6 +29,29 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
   const [showPass, setShowPass] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [testingSmtp, setTestingSmtp] = useState(false);
+
+  const [gemini, setGemini] = useState({
+    enabled: initial.gemini?.enabled ?? false,
+    apiKey: "",
+    model: initial.gemini?.model || "gemini-2.5-flash",
+  });
+  const [hasGeminiApiKey, setHasGeminiApiKey] = useState(initial.gemini?.hasApiKey ?? false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
+
+  const [contact, setContact] = useState({
+    phone: initial.contact?.phone || "",
+    email: initial.contact?.email || "",
+    addressTh: initial.contact?.addressTh || "",
+    addressEn: initial.contact?.addressEn || "",
+    workingHoursTh: initial.contact?.workingHoursTh || "",
+    workingHoursEn: initial.contact?.workingHoursEn || "",
+    facebook: initial.contact?.facebook || "",
+    lineId: initial.contact?.lineId || "",
+    website: initial.contact?.website || "",
+    mapUrl: initial.contact?.mapUrl || "",
+  });
+
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -76,6 +99,23 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
           pass: smtp.pass,
           fromName: smtp.fromName,
         },
+        gemini: {
+          enabled: gemini.enabled,
+          apiKey: gemini.apiKey,
+          model: gemini.model,
+        },
+        contact: {
+          phone: contact.phone.trim(),
+          email: contact.email.trim(),
+          addressTh: contact.addressTh.trim(),
+          addressEn: contact.addressEn.trim(),
+          workingHoursTh: contact.workingHoursTh.trim(),
+          workingHoursEn: contact.workingHoursEn.trim(),
+          facebook: contact.facebook.trim(),
+          lineId: contact.lineId.trim(),
+          website: contact.website.trim(),
+          mapUrl: contact.mapUrl.trim(),
+        },
       });
       if (!r.ok) {
         setErrors(r.error.fieldErrors ?? {});
@@ -85,6 +125,8 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       setErrors({});
       if (smtp.pass.trim() !== "") setHasPassword(true);
       setSmtp((prev) => ({ ...prev, pass: "" }));
+      if (gemini.apiKey.trim() !== "") setHasGeminiApiKey(true);
+      setGemini((prev) => ({ ...prev, apiKey: "" }));
       toast.success(t("settings.saveOk"));
       router.refresh();
     });
@@ -120,6 +162,30 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       toast.error(`${t("settings.smtpTestFail")}: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setTestingSmtp(false);
+    }
+  }
+
+  async function handleTestGemini() {
+    if (!gemini.apiKey.trim() && !hasGeminiApiKey) {
+      toast.error(t("settings.geminiNoApiKey"));
+      return;
+    }
+    setTestingGemini(true);
+    try {
+      const res = await testGeminiAction({
+        apiKey: gemini.apiKey.trim() || undefined,
+        model: gemini.model,
+      });
+      if (res.ok && res.data.ok) {
+        toast.success(t("settings.geminiTestOk", { model: res.data.modelUsed || gemini.model }));
+      } else {
+        const err = (res.ok ? res.data.error : res.error.message) || t("common.error");
+        toast.error(`${t("settings.geminiTestFail")}: ${err}`);
+      }
+    } catch (e) {
+      toast.error(`${t("settings.geminiTestFail")}: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setTestingGemini(false);
     }
   }
 
@@ -207,6 +273,119 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
           <PalettePicker value={form.palette} onChange={(p) => setForm({ ...form, palette: p })} label={t("settings.paletteLabel")} />
           {form.palette === "coral" && <p className="warn" role="note">{t("settings.coralWarn")}</p>}
           {form.palette === "mourning" && <p className="warn" role="note">{t("settings.mourningNote")}</p>}
+        </LiyonCard>
+        <LiyonCard>
+          <h2>{t("settings.contactTitle")}</h2>
+          <p>{t("settings.contactDesc")}</p>
+
+          <div className="fields mt-4 space-y-4">
+            {/* Phone & Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LiyonField label={t("settings.contactPhone")} htmlFor="contact-phone">
+                <input
+                  id="contact-phone"
+                  value={contact.phone}
+                  placeholder={t("settings.contactPhonePh")}
+                  onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                />
+              </LiyonField>
+
+              <LiyonField label={t("settings.contactEmail")} htmlFor="contact-email">
+                <input
+                  id="contact-email"
+                  type="email"
+                  value={contact.email}
+                  placeholder={t("settings.contactEmailPh")}
+                  onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                />
+              </LiyonField>
+            </div>
+
+            {/* Address TH & EN */}
+            <LiyonField label={t("settings.contactAddressTh")} htmlFor="contact-address-th">
+              <textarea
+                id="contact-address-th"
+                rows={2}
+                value={contact.addressTh}
+                placeholder={t("settings.contactAddressThPh")}
+                onChange={(e) => setContact({ ...contact, addressTh: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+              />
+            </LiyonField>
+
+            <LiyonField label={t("settings.contactAddressEn")} htmlFor="contact-address-en">
+              <textarea
+                id="contact-address-en"
+                rows={2}
+                value={contact.addressEn}
+                placeholder={t("settings.contactAddressEnPh")}
+                onChange={(e) => setContact({ ...contact, addressEn: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+              />
+            </LiyonField>
+
+            {/* Working Hours TH & EN */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LiyonField label={t("settings.contactWorkingHoursTh")} htmlFor="contact-hours-th">
+                <input
+                  id="contact-hours-th"
+                  value={contact.workingHoursTh}
+                  placeholder={t("settings.contactWorkingHoursThPh")}
+                  onChange={(e) => setContact({ ...contact, workingHoursTh: e.target.value })}
+                />
+              </LiyonField>
+
+              <LiyonField label={t("settings.contactWorkingHoursEn")} htmlFor="contact-hours-en">
+                <input
+                  id="contact-hours-en"
+                  value={contact.workingHoursEn}
+                  placeholder={t("settings.contactWorkingHoursEnPh")}
+                  onChange={(e) => setContact({ ...contact, workingHoursEn: e.target.value })}
+                />
+              </LiyonField>
+            </div>
+
+            {/* Social & External Links */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LiyonField label={t("settings.contactFacebook")} htmlFor="contact-facebook">
+                <input
+                  id="contact-facebook"
+                  value={contact.facebook}
+                  placeholder={t("settings.contactFacebookPh")}
+                  onChange={(e) => setContact({ ...contact, facebook: e.target.value })}
+                />
+              </LiyonField>
+
+              <LiyonField label={t("settings.contactLineId")} htmlFor="contact-line">
+                <input
+                  id="contact-line"
+                  value={contact.lineId}
+                  placeholder={t("settings.contactLineIdPh")}
+                  onChange={(e) => setContact({ ...contact, lineId: e.target.value })}
+                />
+              </LiyonField>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LiyonField label={t("settings.contactWebsite")} htmlFor="contact-website">
+                <input
+                  id="contact-website"
+                  value={contact.website}
+                  placeholder={t("settings.contactWebsitePh")}
+                  onChange={(e) => setContact({ ...contact, website: e.target.value })}
+                />
+              </LiyonField>
+
+              <LiyonField label={t("settings.contactMapUrl")} htmlFor="contact-map">
+                <input
+                  id="contact-map"
+                  value={contact.mapUrl}
+                  placeholder={t("settings.contactMapUrlPh")}
+                  onChange={(e) => setContact({ ...contact, mapUrl: e.target.value })}
+                />
+              </LiyonField>
+            </div>
+          </div>
         </LiyonCard>
         <LiyonCard>
           <h2>{t("settings.smtpTitle")}</h2>
@@ -383,6 +562,121 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                       <>
                         <Send className="mr-2 h-4 w-4" />
                         {t("settings.smtpTestBtn")}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </LiyonCard>
+
+        {/* Google Gemini AI Settings */}
+        <LiyonCard>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <h2 className="!mb-0">{t("settings.geminiTitle")}</h2>
+          </div>
+          <p>{t("settings.geminiDesc")}</p>
+
+          <div className="mt-4 mb-4">
+            <LiyonSwitchRow
+              id="gemini-enabled"
+              label={t("settings.geminiEnabled")}
+              checked={gemini.enabled}
+              onCheckedChange={(c) => setGemini({ ...gemini, enabled: c })}
+            />
+          </div>
+
+          {gemini.enabled && (
+            <div className="fields mt-4 space-y-4">
+              <div className="rounded-lg border border-purple-200 bg-purple-50/50 dark:border-purple-900/40 dark:bg-purple-950/20 p-3.5 text-sm">
+                <div className="flex items-start gap-2.5">
+                  <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-purple-950 dark:text-purple-200">
+                      Google Gemini AI
+                    </span>
+                    <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                      {t("settings.geminiApiKeyHint")}
+                    </p>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:underline mt-1.5 font-medium"
+                    >
+                      Google AI Studio API Key <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <LiyonField
+                  label={t("settings.geminiApiKey")}
+                  htmlFor="gemini-api-key"
+                  hint={hasGeminiApiKey && !gemini.apiKey ? t("settings.geminiApiKeyKeep") : undefined}
+                  error={errors["gemini.apiKey"]?.[0]}
+                >
+                  <div className="relative">
+                    <input
+                      id="gemini-api-key"
+                      type={showGeminiKey ? "text" : "password"}
+                      value={gemini.apiKey}
+                      placeholder={hasGeminiApiKey ? "••••••••••••••••" : t("settings.geminiApiKeyPh")}
+                      onChange={(e) => setGemini({ ...gemini, apiKey: e.target.value })}
+                      autoComplete="off"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowGeminiKey(!showGeminiKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showGeminiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </LiyonField>
+
+                <LiyonField label={t("settings.geminiModel")} htmlFor="gemini-model">
+                  <LiyonSelect
+                    id="gemini-model"
+                    value={gemini.model}
+                    onChange={(e) => setGemini({ ...gemini, model: e.target.value })}
+                  >
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (แนะนำ - รวดเร็วและแม่นยำ)</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (เสถียร)</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (ประสิทธิภาพสูง)</option>
+                  </LiyonSelect>
+                </LiyonField>
+              </div>
+
+              {/* ส่วนทดสอบการเชื่อมต่อ Gemini */}
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-4 mt-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-sm">{t("settings.geminiTestTitle")}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">{t("settings.geminiTestDesc")}</p>
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={testingGemini || (!gemini.apiKey.trim() && !hasGeminiApiKey)}
+                    onClick={handleTestGemini}
+                  >
+                    {testingGemini ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("settings.geminiTesting")}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        {t("settings.geminiTestBtn")}
                       </>
                     )}
                   </Button>

@@ -35,7 +35,26 @@ export const sidebarGroups: NavGroup[] = [
   },
   {
     label: "curriculum.nav",
-    items: [{ title: "curriculum.nav", href: "/admin/curriculum", icon: GraduationCap, permission: CURRICULUM_P.curriculumRead }],
+    items: [
+      {
+        title: "curriculum.nav",
+        href: "/admin/curriculum",
+        icon: GraduationCap,
+        permission: CURRICULUM_P.curriculumRead,
+        children: [
+          {
+            title: "curriculum.tab.curriculums",
+            href: "/admin/curriculum",
+            permission: CURRICULUM_P.curriculumRead,
+          },
+          {
+            title: "curriculum.tab.departments",
+            href: "/admin/departments",
+            permission: CURRICULUM_P.curriculumRead,
+          },
+        ],
+      },
+    ],
   },
   {
     label: "rooms.nav",

@@ -1,10 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { UserPlus } from "lucide-react";
+import Link from "next/link";
+import { UserPlus, Download, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/shared/lib/i18n/client";
-import { listUsersAction, listRolesForPickerAction, createUserAction, updateUserAction, setUserActiveAction, issuePasswordLinkAction, requestEmailChangeAction } from "@/features/identity/actions";
+import { listUsersAction, listRolesForPickerAction, createUserAction, updateUserAction, setUserActiveAction, issuePasswordLinkAction, requestEmailChangeAction, exportUsersCsvAction } from "@/features/identity/actions";
 import { UsersTableCard } from "./users-table-card";
 import { UserDialog } from "./user-dialog";
 import { LinkDialog } from "./link-dialog";
@@ -27,6 +28,32 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, start] = useTransition();
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const r = await exportUsersCsvAction();
+      if (!r.ok) {
+        toast.error(t("users.exportError"));
+        return;
+      }
+      const blob = new Blob([r.data.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", r.data.filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(t("users.exportSuccess"));
+    } catch {
+      toast.error(t("users.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const [dialog, setDialog] = useState<null | { kind: "create" } | { kind: "edit"; user: UserListItem } | { kind: "link"; link: string; hours: number; title: string; desc: string; mailDelivered: boolean } | { kind: "email"; user: UserListItem } | { kind: "suspend"; users: UserListItem[] }>(null);
   const [form, setForm] = useState<UserForm>(emptyForm());
@@ -115,7 +142,41 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
     <>
       <header className="ph hr">
         <h1 className="sr-only">{t("users.title")}</h1>
-        {canManage && <div className="acts ml-auto"><Button type="button" onClick={() => { setForm(emptyForm()); setDialog({ kind: "create" }); }}><UserPlus aria-hidden="true" />{t("users.addBtn")}</Button></div>}
+        <div className="acts ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={exporting}
+            onClick={handleExport}
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="h-4 w-4" aria-hidden="true" />
+            )}
+            {t("users.exportBtn")}
+          </Button>
+          {canManage && (
+            <>
+              <Button asChild variant="outline">
+                <Link href="/users/import">
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  {t("users.importBtn")}
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setForm(emptyForm());
+                  setDialog({ kind: "create" });
+                }}
+              >
+                <UserPlus aria-hidden="true" />
+                {t("users.addBtn")}
+              </Button>
+            </>
+          )}
+        </div>
       </header>
       {/* canManage ของตารางปิดชั่วคราวขณะมี dialog เปิดอยู่ — คอลัมน์เลือกแถว/เมนูสามจุดของพื้นหลังหายไปด้วย
           (นอกจาก UX ที่ถูกต้องอยู่แล้ว คือพื้นหลังไม่ควรโต้ตอบได้ขณะมี dialog บัง — Radix aria-hides พื้นหลังให้

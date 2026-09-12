@@ -17,6 +17,25 @@ export interface TenantSmtpSettingsView {
   fromName?: string;
 }
 
+export interface TenantGeminiSettingsView {
+  enabled: boolean;
+  hasApiKey: boolean;
+  model: string;
+}
+
+export interface TenantContactSettingsView {
+  phone: string;
+  email: string;
+  addressTh: string;
+  addressEn: string;
+  workingHoursTh: string;
+  workingHoursEn: string;
+  facebook: string;
+  lineId: string;
+  website: string;
+  mapUrl: string;
+}
+
 export interface TenantSettings {
   code: string;
   nameTh: string;
@@ -24,14 +43,18 @@ export interface TenantSettings {
   logoUrl: string | null;
   palette: PaletteId;
   smtp?: TenantSmtpSettingsView;
+  gemini?: TenantGeminiSettingsView;
+  contact?: TenantContactSettingsView;
 }
+
 
 async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSettings> {
   const t = await db.tenant.findUnique({ where: { id: tenantId } });
   if (!t) throw errors.not_found();
-  const settingsObj = t.settings as { palette?: unknown; smtp?: Record<string, unknown> } | null;
+  const settingsObj = t.settings as { palette?: unknown; smtp?: Record<string, unknown>; gemini?: Record<string, unknown> } | null;
   const p = settingsObj?.palette;
   const rawSmtp = settingsObj?.smtp;
+  const rawGemini = settingsObj?.gemini;
   const smtp: TenantSmtpSettingsView = {
     enabled: Boolean(rawSmtp?.enabled),
     service: rawSmtp?.service === "custom" ? "custom" : "gmail",
@@ -43,20 +66,44 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
     fromName: typeof rawSmtp?.fromName === "string" ? rawSmtp.fromName : "",
   };
 
-  return { code: t.code, nameTh: t.nameTh, nameEn: t.nameEn, logoUrl: t.logoUrl, palette: isPalette(p) ? p : DEFAULT_PALETTE, smtp };
+  const gemini: TenantGeminiSettingsView = {
+    enabled: Boolean(rawGemini?.enabled),
+    hasApiKey: Boolean(
+      (typeof rawGemini?.apiKey === "string" && rawGemini.apiKey.length > 0) ||
+      Boolean(process.env.GEMINI_API_KEY)
+    ),
+    model: typeof rawGemini?.model === "string" && rawGemini.model ? rawGemini.model : "gemini-2.5-flash",
+  };
+
+  const rawContact = (settingsObj as Record<string, unknown> | null)?.contact as Record<string, unknown> | undefined;
+  const contact: TenantContactSettingsView = {
+    phone: typeof rawContact?.phone === "string" ? rawContact.phone : "",
+    email: typeof rawContact?.email === "string" ? rawContact.email : "",
+    addressTh: typeof rawContact?.addressTh === "string" ? rawContact.addressTh : "",
+    addressEn: typeof rawContact?.addressEn === "string" ? rawContact.addressEn : "",
+    workingHoursTh: typeof rawContact?.workingHoursTh === "string" ? rawContact.workingHoursTh : "",
+    workingHoursEn: typeof rawContact?.workingHoursEn === "string" ? rawContact.workingHoursEn : "",
+    facebook: typeof rawContact?.facebook === "string" ? rawContact.facebook : "",
+    lineId: typeof rawContact?.lineId === "string" ? rawContact.lineId : "",
+    website: typeof rawContact?.website === "string" ? rawContact.website : "",
+    mapUrl: typeof rawContact?.mapUrl === "string" ? rawContact.mapUrl : "",
+  };
+
+  return { code: t.code, nameTh: t.nameTh, nameEn: t.nameEn, logoUrl: t.logoUrl, palette: isPalette(p) ? p : DEFAULT_PALETTE, smtp, gemini, contact };
 }
 
 export async function getTenantSettings(tenantId: string): Promise<TenantSettings> {
   return readTenantSettings(tenantId, prisma);
 }
 
-/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette และ smtp ที่เปลี่ยน ไม่ทับทั้งก้อน */
+/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette, smtp, gemini และ contact ที่เปลี่ยน ไม่ทับทั้งก้อน */
 export async function updateTenantSettings(input: { tenantId: string; actorId: string } & UpdateSettingsInput): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const before = await readTenantSettings(input.tenantId, tx);
     const t = await tx.tenant.findUniqueOrThrow({ where: { id: input.tenantId }, select: { settings: true } });
-    const currentSettings = (t.settings as { smtp?: Record<string, unknown> } | null) || {};
+    const currentSettings = (t.settings as { smtp?: Record<string, unknown>; gemini?: Record<string, unknown>; contact?: Record<string, unknown> } | null) || {};
     const existingSmtp = currentSettings.smtp;
+    const existingGemini = currentSettings.gemini;
 
     const newSettings: Record<string, unknown> = {
       ...(t.settings as object),
@@ -73,6 +120,31 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
         user: input.smtp.user,
         pass: input.smtp.pass && input.smtp.pass.trim() !== "" ? input.smtp.pass.trim() : (existingSmtp?.pass as string || ""),
         fromName: input.smtp.fromName || "",
+      };
+    }
+
+    if (input.gemini) {
+      newSettings.gemini = {
+        enabled: input.gemini.enabled,
+        apiKey: input.gemini.apiKey && input.gemini.apiKey.trim() !== ""
+          ? input.gemini.apiKey.trim()
+          : (existingGemini?.apiKey as string || ""),
+        model: input.gemini.model || "gemini-2.5-flash",
+      };
+    }
+
+    if (input.contact) {
+      newSettings.contact = {
+        phone: input.contact.phone || "",
+        email: input.contact.email || "",
+        addressTh: input.contact.addressTh || "",
+        addressEn: input.contact.addressEn || "",
+        workingHoursTh: input.contact.workingHoursTh || "",
+        workingHoursEn: input.contact.workingHoursEn || "",
+        facebook: input.contact.facebook || "",
+        lineId: input.contact.lineId || "",
+        website: input.contact.website || "",
+        mapUrl: input.contact.mapUrl || "",
       };
     }
 
@@ -159,6 +231,7 @@ export interface TenantBrandInfo {
   nameTh: string;
   nameEn: string;
   logoUrl: string | null;
+  contact?: TenantContactSettingsView;
 }
 
 /** ใช้โดย layouts (Portal & Admin) เพื่อแสดงชื่อและโลโก้องค์กรจากหน้า Settings · ไม่ throw */
@@ -168,22 +241,39 @@ export const resolveTenantBrand = cache(async (): Promise<TenantBrandInfo> => {
     const tenant = sessionTid
       ? await prisma.tenant.findUnique({
           where: { id: sessionTid },
-          select: { nameTh: true, nameEn: true, logoUrl: true },
+          select: { nameTh: true, nameEn: true, logoUrl: true, settings: true },
         })
       : (await prisma.tenant.findUnique({
           where: { code: "DEMO" },
-          select: { nameTh: true, nameEn: true, logoUrl: true },
+          select: { nameTh: true, nameEn: true, logoUrl: true, settings: true },
         })) ??
         (await prisma.tenant.findFirst({
           where: { isActive: true },
           orderBy: { createdAt: "asc" },
-          select: { nameTh: true, nameEn: true, logoUrl: true },
+          select: { nameTh: true, nameEn: true, logoUrl: true, settings: true },
         }));
+
+    const rawContact = (tenant?.settings as Record<string, unknown> | null)?.contact as Record<string, unknown> | undefined;
+    const contact: TenantContactSettingsView | undefined = rawContact
+      ? {
+          phone: typeof rawContact.phone === "string" ? rawContact.phone : "",
+          email: typeof rawContact.email === "string" ? rawContact.email : "",
+          addressTh: typeof rawContact.addressTh === "string" ? rawContact.addressTh : "",
+          addressEn: typeof rawContact.addressEn === "string" ? rawContact.addressEn : "",
+          workingHoursTh: typeof rawContact.workingHoursTh === "string" ? rawContact.workingHoursTh : "",
+          workingHoursEn: typeof rawContact.workingHoursEn === "string" ? rawContact.workingHoursEn : "",
+          facebook: typeof rawContact.facebook === "string" ? rawContact.facebook : "",
+          lineId: typeof rawContact.lineId === "string" ? rawContact.lineId : "",
+          website: typeof rawContact.website === "string" ? rawContact.website : "",
+          mapUrl: typeof rawContact.mapUrl === "string" ? rawContact.mapUrl : "",
+        }
+      : undefined;
 
     return {
       nameTh: tenant?.nameTh || "คณะพุทธศาสตร์ มจร",
       nameEn: tenant?.nameEn || "Faculty of Buddhism, MCU",
       logoUrl: tenant?.logoUrl || null,
+      contact,
     };
   } catch {
     return {
@@ -193,4 +283,71 @@ export const resolveTenantBrand = cache(async (): Promise<TenantBrandInfo> => {
     };
   }
 });
+
+export async function getTenantGeminiConfig(tenantId: string): Promise<{
+  enabled: boolean;
+  apiKey: string;
+  model: string;
+}> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } });
+  const rawGemini = (t?.settings as { gemini?: Record<string, unknown> } | null)?.gemini;
+  const apiKey = (typeof rawGemini?.apiKey === "string" && rawGemini.apiKey.trim()) || process.env.GEMINI_API_KEY || "";
+  const enabled = rawGemini?.enabled !== undefined ? Boolean(rawGemini.enabled) : Boolean(apiKey);
+  const model = typeof rawGemini?.model === "string" && rawGemini.model ? rawGemini.model : "gemini-2.5-flash";
+
+  return { enabled, apiKey, model };
+}
+
+export async function testGeminiConnection(input: {
+  tenantId: string;
+  apiKey?: string;
+  model?: string;
+}): Promise<{ ok: boolean; error?: string; modelUsed?: string }> {
+  let apiKey = input.apiKey?.trim() || "";
+  let model = input.model?.trim() || "gemini-2.5-flash";
+
+  if (!apiKey) {
+    const config = await getTenantGeminiConfig(input.tenantId);
+    apiKey = config.apiKey;
+    if (!input.model && config.model) model = config.model;
+  }
+
+  if (!apiKey) {
+    return { ok: false, error: "settings.geminiNoApiKey" };
+  }
+
+  try {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: "Hello, respond with OK if you can read this." }],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 10,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => null);
+      const msg = errorJson?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+      return { ok: false, error: msg };
+    }
+
+    const data = await res.json();
+    if (!data.candidates || data.candidates.length === 0) {
+      return { ok: false, error: "Empty response from Gemini API" };
+    }
+
+    return { ok: true, modelUsed: model };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Connection failed" };
+  }
+}
+
 

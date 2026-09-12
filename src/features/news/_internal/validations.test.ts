@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createNewsArticleSchema, updateNewsArticleSchema } from "./validations";
+import { createNewsArticleSchema, updateNewsArticleSchema, translateNewsSchema } from "./validations";
 
 const VALID_UUID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -50,5 +50,20 @@ describe("news validations", () => {
 
     const parsed = updateNewsArticleSchema.safeParse(updateData);
     expect(parsed.success).toBe(true);
+  });
+
+  it("validates translateNewsSchema correctly", () => {
+    const valid = translateNewsSchema.safeParse({
+      titleTh: "ข่าวสัมมนาวิชาการ",
+      summaryTh: "สรุปข่าว",
+      contentTh: "เนื้อหาข่าวแบบละเอียด",
+    });
+    expect(valid.success).toBe(true);
+
+    const missingTitle = translateNewsSchema.safeParse({
+      titleTh: "",
+      contentTh: "เนื้อหาข่าว",
+    });
+    expect(missingTitle.success).toBe(false);
   });
 });
