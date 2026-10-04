@@ -18,6 +18,7 @@ import {
   Lightbulb,
   Briefcase,
   Sparkles,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -35,7 +36,7 @@ import {
 } from "@/shared/components/liyon";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
 import { cn } from "@/shared/lib/utils";
-import type { CurriculumDto, DegreeLevel, AcademicDepartmentDto } from "@/features/curriculum";
+import type { CurriculumDto, DegreeLevel, AcademicDepartmentDto, ClassScheduleDto } from "@/features/curriculum";
 import {
   createCurriculumAction,
   updateCurriculumAction,
@@ -43,11 +44,13 @@ import {
   toggleCurriculumActiveAction,
 } from "@/features/curriculum/actions";
 import { DepartmentAdminClient } from "./department-client";
+import { ScheduleAdminClient } from "./schedule-client";
 
 interface CurriculumClientProps {
   departments: AcademicDepartmentDto[];
   initialCurriculums: CurriculumDto[];
-  initialTab?: "curriculums" | "departments";
+  initialSchedules?: ClassScheduleDto[];
+  initialTab?: "curriculums" | "departments" | "schedules";
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
@@ -59,6 +62,9 @@ interface CurriculumFormData {
   code: string;
   nameTh: string;
   nameEn: string;
+  majorTh: string;
+  majorEn: string;
+  programLanguage: "THAI" | "ENGLISH" | "BILINGUAL";
   degreeTh: string;
   degreeEn: string;
   degreeAbbrTh: string;
@@ -81,6 +87,7 @@ interface CurriculumFormData {
 export function CurriculumAdminClient({
   departments,
   initialCurriculums,
+  initialSchedules = [],
   initialTab = "curriculums",
   canCreate,
   canEdit,
@@ -89,11 +96,12 @@ export function CurriculumAdminClient({
   const t = useT();
   const locale = useLocale();
 
-  const [activeTab, setActiveTab] = useState<"curriculums" | "departments">(initialTab);
+  const [activeTab, setActiveTab] = useState<"curriculums" | "departments" | "schedules">(initialTab);
   const [curriculums, setCurriculums] = useState<CurriculumDto[]>(initialCurriculums);
   const [search, setSearch] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("ALL");
   const [selectedDept, setSelectedDept] = useState("ALL");
+  const [selectedLanguage, setSelectedLanguage] = useState("ALL");
   const [isPending, startTransition] = useTransition();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,6 +113,9 @@ export function CurriculumAdminClient({
     code: "",
     nameTh: "",
     nameEn: "",
+    majorTh: "",
+    majorEn: "",
+    programLanguage: "THAI",
     degreeTh: "",
     degreeEn: "",
     degreeAbbrTh: "",
@@ -132,11 +143,14 @@ export function CurriculumAdminClient({
       c.code.toLowerCase().includes(search.toLowerCase()) ||
       c.nameTh.toLowerCase().includes(search.toLowerCase()) ||
       c.nameEn.toLowerCase().includes(search.toLowerCase()) ||
+      (c.majorTh && c.majorTh.toLowerCase().includes(search.toLowerCase())) ||
+      (c.majorEn && c.majorEn.toLowerCase().includes(search.toLowerCase())) ||
       c.degreeAbbrTh.toLowerCase().includes(search.toLowerCase()) ||
       c.degreeAbbrEn.toLowerCase().includes(search.toLowerCase());
     const matchesLevel = selectedLevel === "ALL" || c.degreeLevel === selectedLevel;
     const matchesDept = selectedDept === "ALL" || c.departmentId === selectedDept;
-    return matchesSearch && matchesLevel && matchesDept;
+    const matchesLanguage = selectedLanguage === "ALL" || (c.programLanguage || "THAI") === selectedLanguage;
+    return matchesSearch && matchesLevel && matchesDept && matchesLanguage;
   });
 
   const [dialogTab, setDialogTab] = useState<"general" | "philosophy" | "career" | "media">("general");
@@ -159,6 +173,9 @@ export function CurriculumAdminClient({
       code: c.code,
       nameTh: c.nameTh,
       nameEn: c.nameEn,
+      majorTh: c.majorTh || "",
+      majorEn: c.majorEn || "",
+      programLanguage: (c.programLanguage as "THAI" | "ENGLISH" | "BILINGUAL") || "THAI",
       degreeTh: c.degreeTh,
       degreeEn: c.degreeEn,
       degreeAbbrTh: c.degreeAbbrTh,
@@ -189,6 +206,9 @@ export function CurriculumAdminClient({
       code: "B.A.-REL-PHIL",
       nameTh: "หลักสูตรพุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา (หลักสูตรปรับปรุง พ.ศ. ๒๕๖๕)",
       nameEn: "Bachelor of Arts Program in Religion and Philosophy",
+      majorTh: "ศาสนาและปรัชญา",
+      majorEn: "Religion and Philosophy",
+      programLanguage: "THAI",
       degreeTh: "พุทธศาสตรบัณฑิต (ศาสนาและปรัชญา)",
       degreeEn: "Bachelor of Arts (Religion and Philosophy)",
       degreeAbbrTh: "พธ.บ. (ศาสนาและปรัชญา)",
@@ -218,6 +238,9 @@ export function CurriculumAdminClient({
         code: form.code,
         nameTh: form.nameTh,
         nameEn: form.nameEn,
+        majorTh: form.majorTh,
+        majorEn: form.majorEn,
+        programLanguage: form.programLanguage,
         degreeTh: form.degreeTh,
         degreeEn: form.degreeEn,
         degreeAbbrTh: form.degreeAbbrTh,
@@ -271,6 +294,11 @@ export function CurriculumAdminClient({
         code: typeof parsed.code === "string" ? parsed.code : prev.code,
         nameTh: typeof parsed.nameTh === "string" ? parsed.nameTh : prev.nameTh,
         nameEn: typeof parsed.nameEn === "string" ? parsed.nameEn : prev.nameEn,
+        majorTh: typeof parsed.majorTh === "string" ? parsed.majorTh : prev.majorTh,
+        majorEn: typeof parsed.majorEn === "string" ? parsed.majorEn : prev.majorEn,
+        programLanguage: ["THAI", "ENGLISH", "BILINGUAL"].includes(parsed.programLanguage)
+          ? parsed.programLanguage
+          : prev.programLanguage,
         degreeTh: typeof parsed.degreeTh === "string" ? parsed.degreeTh : prev.degreeTh,
         degreeEn: typeof parsed.degreeEn === "string" ? parsed.degreeEn : prev.degreeEn,
         degreeAbbrTh: typeof parsed.degreeAbbrTh === "string" ? parsed.degreeAbbrTh : prev.degreeAbbrTh,
@@ -375,6 +403,30 @@ export function CurriculumAdminClient({
     }
   };
 
+  const getLanguageBadge = (lang?: string) => {
+    switch (lang) {
+      case "ENGLISH":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+            🇬🇧 {locale === "th" ? "อังกฤษ" : "English"}
+          </span>
+        );
+      case "BILINGUAL":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+            🌐 {locale === "th" ? "สองภาษา" : "Bilingual"}
+          </span>
+        );
+      case "THAI":
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            🇹🇭 {locale === "th" ? "ไทย" : "Thai"}
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Navigation Tabs */}
@@ -411,11 +463,36 @@ export function CurriculumAdminClient({
             {departments.length}
           </span>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("schedules")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer",
+            activeTab === "schedules"
+              ? "border-primary text-primary font-semibold"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Calendar className="h-4 w-4" />
+          <span>{t("curriculum.tab.schedules")}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-normal">
+            {initialSchedules.length}
+          </span>
+        </button>
       </div>
 
       {activeTab === "departments" ? (
         <DepartmentAdminClient
           initialDepartments={departments}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
+      ) : activeTab === "schedules" ? (
+        <ScheduleAdminClient
+          departments={departments}
+          curriculums={curriculums}
+          initialSchedules={initialSchedules}
           canCreate={canCreate}
           canEdit={canEdit}
           canDelete={canDelete}
@@ -449,7 +526,7 @@ export function CurriculumAdminClient({
               className="w-full pl-9 pr-4 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <div className="w-full sm:w-56">
+          <div className="w-full sm:w-44">
             <LiyonSelect
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
@@ -461,7 +538,18 @@ export function CurriculumAdminClient({
               <option value="CERTIFICATE">{t("curriculum.level.certificate")}</option>
             </LiyonSelect>
           </div>
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-44">
+            <LiyonSelect
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+            >
+              <option value="ALL">{t("curriculum.filter.allLanguages")}</option>
+              <option value="THAI">🇹🇭 {t("curriculum.lang.thai")}</option>
+              <option value="ENGLISH">🇬🇧 {t("curriculum.lang.english")}</option>
+              <option value="BILINGUAL">🌐 {t("curriculum.lang.bilingual")}</option>
+            </LiyonSelect>
+          </div>
+          <div className="w-full sm:w-56">
             <LiyonSelect
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
@@ -484,8 +572,9 @@ export function CurriculumAdminClient({
             <thead className="bg-muted/50 text-muted-foreground border-b text-xs font-semibold uppercase">
               <tr>
                 <th className="py-3.5 px-4">{t("curriculum.field.code")}</th>
-                <th className="py-3.5 px-4">{locale === "th" ? "ชื่อหลักสูตร / ปริญญา" : "Program Name / Degree"}</th>
+                <th className="py-3.5 px-4">{locale === "th" ? "ชื่อหลักสูตร / สาขาวิชา" : "Program / Major"}</th>
                 <th className="py-3.5 px-4">{t("curriculum.field.degreeLevel")}</th>
+                <th className="py-3.5 px-4">{locale === "th" ? "ภาษา" : "Language"}</th>
                 <th className="py-3.5 px-4">{t("curriculum.field.department")}</th>
                 <th className="py-3.5 px-4 text-center">{t("curriculum.field.totalCredits")}</th>
                 <th className="py-3.5 px-4 text-center">{t("curriculum.field.isActive")}</th>
@@ -495,7 +584,7 @@ export function CurriculumAdminClient({
             <tbody className="divide-y divide-border">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
                     <GraduationCap className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     {t("curriculum.empty")}
                   </td>
@@ -510,6 +599,11 @@ export function CurriculumAdminClient({
                       <div className="font-medium text-foreground">
                         {locale === "th" ? c.nameTh : c.nameEn}
                       </div>
+                      {c.majorTh && (
+                        <div className="text-xs text-primary font-medium mt-0.5">
+                          {locale === "th" ? `สาขาวิชา: ${c.majorTh}` : `Major: ${c.majorEn || c.majorTh}`}
+                        </div>
+                      )}
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {locale === "th" ? `${c.degreeTh} (${c.degreeAbbrTh})` : `${c.degreeEn} (${c.degreeAbbrEn})`}
                       </div>
@@ -527,6 +621,9 @@ export function CurriculumAdminClient({
                     </td>
                     <td className="py-3.5 px-4">
                       {getDegreeLevelBadge(c.degreeLevel)}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {getLanguageBadge(c.programLanguage)}
                     </td>
                     <td className="py-3.5 px-4 text-muted-foreground text-xs">
                       {locale === "th" ? c.departmentNameTh : c.departmentNameEn}
@@ -726,8 +823,8 @@ export function CurriculumAdminClient({
           {/* TAB 1: GENERAL & DEGREE */}
           {dialogTab === "general" && (
             <div className="space-y-4 pt-1">
-              {/* Row 1: Code, Department, Degree Level */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Row 1: Code, Department, Degree Level, Program Language */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <LiyonField label={<>{t("curriculum.field.code")} <span className="text-destructive">*</span></>}>
                   <input
                     type="text"
@@ -736,18 +833,6 @@ export function CurriculumAdminClient({
                     placeholder="เช่น B.A.-REL-PHIL"
                     className="w-full px-3 py-2 border rounded-md bg-background text-sm font-mono"
                   />
-                </LiyonField>
-                <LiyonField label={<>{t("curriculum.field.department")} <span className="text-destructive">*</span></>}>
-                  <LiyonSelect
-                    value={form.departmentId}
-                    onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-                  >
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.nameTh} ({d.nameEn})
-                      </option>
-                    ))}
-                  </LiyonSelect>
                 </LiyonField>
                 <LiyonField label={<>{t("curriculum.field.degreeLevel")} <span className="text-destructive">*</span></>}>
                   <LiyonSelect
@@ -758,6 +843,28 @@ export function CurriculumAdminClient({
                     <option value="MASTER">{t("curriculum.level.master")}</option>
                     <option value="DOCTORAL">{t("curriculum.level.doctoral")}</option>
                     <option value="CERTIFICATE">{t("curriculum.level.certificate")}</option>
+                  </LiyonSelect>
+                </LiyonField>
+                <LiyonField label={<>{t("curriculum.field.programLanguage")} <span className="text-destructive">*</span></>}>
+                  <LiyonSelect
+                    value={form.programLanguage}
+                    onChange={(e) => setForm({ ...form, programLanguage: e.target.value as "THAI" | "ENGLISH" | "BILINGUAL" })}
+                  >
+                    <option value="THAI">🇹🇭 {t("curriculum.lang.thai")}</option>
+                    <option value="ENGLISH">🇬🇧 {t("curriculum.lang.english")}</option>
+                    <option value="BILINGUAL">🌐 {t("curriculum.lang.bilingual")}</option>
+                  </LiyonSelect>
+                </LiyonField>
+                <LiyonField label={<>{t("curriculum.field.department")} <span className="text-destructive">*</span></>}>
+                  <LiyonSelect
+                    value={form.departmentId}
+                    onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
+                  >
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nameTh}
+                      </option>
+                    ))}
                   </LiyonSelect>
                 </LiyonField>
               </div>
@@ -779,6 +886,28 @@ export function CurriculumAdminClient({
                     value={form.nameEn}
                     onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
                     placeholder="e.g. Bachelor of Arts Program in Religion and Philosophy"
+                    className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+                  />
+                </LiyonField>
+              </div>
+
+              {/* Row 3: Major TH & EN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <LiyonField label={t("curriculum.field.majorTh")}>
+                  <input
+                    type="text"
+                    value={form.majorTh}
+                    onChange={(e) => setForm({ ...form, majorTh: e.target.value })}
+                    placeholder="เช่น ศาสนาและปรัชญา, พระพุทธศาสนา, ภาษาบาลี, สันติศึกษา"
+                    className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+                  />
+                </LiyonField>
+                <LiyonField label={t("curriculum.field.majorEn")}>
+                  <input
+                    type="text"
+                    value={form.majorEn}
+                    onChange={(e) => setForm({ ...form, majorEn: e.target.value })}
+                    placeholder="e.g. Religion and Philosophy, Buddhism, Pali, Peace Studies"
                     className="w-full px-3 py-2 border rounded-md bg-background text-sm"
                   />
                 </LiyonField>

@@ -20,7 +20,8 @@ import {
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { resolvePublicTenantId } from "@/features/news/server";
-import { getPublicCurriculumByCode } from "@/features/curriculum/server";
+import { getPublicCurriculumByCode, getPublicSchedulesByCurriculum } from "@/features/curriculum/server";
+import { ScheduleTimetableView } from "../_components/schedule-timetable-view";
 
 export default async function PublicCurriculumDetailPage({
   params,
@@ -39,6 +40,8 @@ export default async function PublicCurriculumDetailPage({
     notFound();
   }
 
+  const schedules = await getPublicSchedulesByCurriculum(tenantId, curriculum.id);
+
   const getLevelBadge = (level: string) => {
     switch (level) {
       case "BACHELOR":
@@ -51,6 +54,30 @@ export default async function PublicCurriculumDetailPage({
         return <span className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 text-xs px-3 py-1 rounded-full font-medium">{isThai ? "หลักสูตรประกาศนียบัตร" : "Certificate Program"}</span>;
       default:
         return null;
+    }
+  };
+
+  const getLanguageBadge = (lang?: string) => {
+    switch (lang) {
+      case "ENGLISH":
+        return (
+          <span className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs px-3 py-1 rounded-full font-medium">
+            🇬🇧 {isThai ? "ภาคภาษาอังกฤษ (English Program)" : "English Program"}
+          </span>
+        );
+      case "BILINGUAL":
+        return (
+          <span className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs px-3 py-1 rounded-full font-medium">
+            🌐 {isThai ? "หลักสูตรสองภาษา (Bilingual Program)" : "Bilingual Program"}
+          </span>
+        );
+      case "THAI":
+      default:
+        return (
+          <span className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs px-3 py-1 rounded-full font-medium">
+            🇹🇭 {isThai ? "ภาคภาษาไทย (Thai Program)" : "Thai Program"}
+          </span>
+        );
     }
   };
 
@@ -94,6 +121,7 @@ export default async function PublicCurriculumDetailPage({
             {curriculum.code}
           </span>
           {getLevelBadge(curriculum.degreeLevel)}
+          {getLanguageBadge(curriculum.programLanguage)}
           <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-md flex items-center gap-1">
             <Calendar className="h-3.5 w-3.5" />
             {isThai ? `หลักสูตรปรับปรุง พ.ศ. ${curriculum.effectiveYear}` : `Curriculum Revision Year ${curriculum.effectiveYear}`}
@@ -108,6 +136,12 @@ export default async function PublicCurriculumDetailPage({
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
             {isThai ? curriculum.nameTh : curriculum.nameEn}
           </h1>
+          {(curriculum.majorTh || curriculum.majorEn) && (
+            <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-md">
+              <GraduationCap className="h-4 w-4" />
+              <span>{isThai ? `สาขาวิชา: ${curriculum.majorTh || curriculum.majorEn}` : `Major: ${curriculum.majorEn || curriculum.majorTh}`}</span>
+            </div>
+          )}
           <p className="text-sm sm:text-base text-muted-foreground font-medium">
             {isThai ? curriculum.nameEn : curriculum.nameTh}
           </p>
@@ -155,6 +189,15 @@ export default async function PublicCurriculumDetailPage({
             <span>{isThai ? "สมัครเรียนออนไลน์ (มจร)" : "MCU Online Admission"}</span>
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
           </a>
+          {schedules.length > 0 && (
+            <a
+              href="#schedules"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-semibold hover:bg-muted transition-colors shadow-xs"
+            >
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{isThai ? "ตารางสอนประจำภาค" : "Class Timetable"}</span>
+            </a>
+          )}
         </div>
       </div>
 
@@ -380,6 +423,39 @@ export default async function PublicCurriculumDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Semester Class Schedules Section */}
+      {schedules.length > 0 && (
+        <div id="schedules" className="space-y-6 pt-8 border-t border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{isThai ? "ตารางเรียน / ตารางสอนประจำภาคการศึกษา" : "Semester Class Timetables"}</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+                {isThai ? "ตารางสอนตามหลักสูตร" : "Curriculum Class Schedules"}
+              </h3>
+            </div>
+            <Link
+              href={`/curriculum/schedules?dept=${curriculum.departmentId}&curriculum=${curriculum.id}`}
+              className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
+            >
+              <span>{isThai ? "ดูตารางสอนทุกชั้นปี" : "View All Schedules"}</span> &rarr;
+            </Link>
+          </div>
+
+          <div className="space-y-8">
+            {schedules.map((sched) => (
+              <ScheduleTimetableView
+                key={sched.id}
+                schedule={sched}
+                isThai={isThai}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

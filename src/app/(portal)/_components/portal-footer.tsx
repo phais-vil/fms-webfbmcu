@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   GraduationCap,
@@ -48,67 +50,64 @@ export function PortalFooter({
   const lineId = contact?.lineId;
   const mapUrl = contact?.mapUrl;
 
+  const highlights = [
+    {
+      icon: ShieldCheck,
+      titleTh: "มาตรฐานการศึกษาสากล",
+      titleEn: "Quality Accreditations",
+      descTh: "เกณฑ์คุณภาพ AUN-QA & EdPEx",
+      descEn: "Aligned with AUN-QA & EdPEx",
+    },
+    {
+      icon: BookOpen,
+      titleTh: "เชี่ยวชาญพระไตรปิฎก",
+      titleEn: "Tipitaka Studies",
+      descTh: "สืบทอดหลักพุทธธรรมและวิปัสสนา",
+      descEn: "Canonical Pali & Vipassana mastery",
+    },
+    {
+      icon: QrCode,
+      titleTh: "บริการดิจิทัลครบวงจร",
+      titleEn: "Smart Digital Services",
+      descTh: "คำร้องออนไลน์ & QR Verification",
+      descEn: "Online Services & Digital Attendance",
+    },
+    {
+      icon: Globe,
+      titleTh: "เครือข่ายพุทธศาสตร์สากล",
+      titleEn: "Global Buddhist Network",
+      descTh: "ร่วมมือกับองค์กรพุทธศาสนาทั่วโลก",
+      descEn: "Partnerships with IABU & WBU",
+    },
+  ];
+
   return (
-    <footer className="border-t border-border bg-gradient-to-b from-background via-muted/20 to-muted/50 text-foreground transition-colors">
-      {/* 1. Value Proposition / Quality Assurance Strip */}
-      <div className="border-b border-border/70 bg-primary/[0.03]">
+    <footer className="relative mt-auto border-t border-slate-700/60 bg-[var(--ink-band,#0F172A)] text-[var(--ink-band-text,#F8FAFC)] transition-colors shadow-2xl">
+      {/* 1. Value Proposition Highlights Strip (Dark Contrast) */}
+      <div className="border-b border-white/10 bg-black/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {isThai ? "มาตรฐานการศึกษาสากล" : "Quality Accreditations"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isThai ? "เกณฑ์คุณภาพ AUN-QA & EdPEx" : "Aligned with AUN-QA & EdPEx"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {isThai ? "เชี่ยวชาญพระไตรปิฎก" : "Tipitaka Studies"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isThai ? "สืบทอดหลักพุทธธรรมและวิปัสสนา" : "Canonical Pali & Vipassana mastery"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <QrCode className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {isThai ? "บริการดิจิทัลครบวงจร" : "Smart Digital Services"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isThai ? "คำร้องออนไลน์ & QR Verification" : "Online Services & Digital Attendance"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Globe className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {isThai ? "เครือข่ายพุทธศาสตร์สากล" : "Global Buddhist Network"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isThai ? "ร่วมมือกับองค์กรพุทธศาสนาทั่วโลก" : "Partnerships with IABU & WBU"}
-                </p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {highlights.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3.5 p-3.5 rounded-[var(--r-md)] border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all duration-200"
+                >
+                  <div className="h-10 w-10 rounded-[var(--r-sm)] bg-[var(--brand)] text-[var(--on-brand,#FFFFFF)] flex items-center justify-center shrink-0 shadow-sm">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white leading-tight truncate">
+                      {isThai ? item.titleTh : item.titleEn}
+                    </p>
+                    <p className="text-xs text-[var(--ink-band-muted,#94A3B8)] mt-0.5 truncate">
+                      {isThai ? item.descTh : item.descEn}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -119,22 +118,26 @@ export function PortalFooter({
           {/* Column 1: Identity & Official Contacts (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={orgName}
-                  className="h-11 w-11 rounded-xl object-contain bg-background p-1 border shadow-xs"
-                />
-              ) : (
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-transform group-hover:scale-105">
-                  <GraduationCap className="h-6 w-6" />
-                </div>
-              )}
-              <div className="flex flex-col">
-                <span className="font-bold text-lg leading-tight tracking-tight text-foreground">
+              <i className="w-11 h-11 rounded-[var(--r-sm)] flex items-center justify-center bg-[var(--brand)] text-[var(--on-brand,#FFFFFF)] shadow-md overflow-hidden transition-transform duration-200 group-hover:scale-105 shrink-0 not-italic border border-white/15">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoUrl}
+                    alt={orgName}
+                    className="w-full h-full object-contain p-1"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <GraduationCap className="h-6 w-6" aria-hidden="true" />
+                )}
+              </i>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-lg leading-tight tracking-tight text-white group-hover:text-[var(--brand2-light,#F0C070)] transition-colors">
                   {orgName}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-[var(--ink-band-muted,#94A3B8)] mt-0.5">
                   {isThai
                     ? "มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย (มจร)"
                     : "Mahachulalongkornrajavidyalaya University"}
@@ -142,56 +145,56 @@ export function PortalFooter({
               </div>
             </Link>
 
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+            <p className="text-sm text-[var(--ink-band-muted,#94A3B8)] leading-relaxed max-w-md">
               {isThai
                 ? "มุ่งผลิตบัณฑิตให้มีความรู้เชี่ยวชาญในพระไตรปิฎก มีคุณธรรม จริยธรรม นำหลักพุทธธรรมบูรณาการกับศาสตร์สมัยใหม่ เพื่อพัฒนาจิตใจและสังคมอย่างยั่งยืน"
                 : "Dedicated to fostering scholars in Tipitaka studies, ethics, and mindfulness, integrating Buddhist wisdom to enrich contemporary global society."}
             </p>
 
-            <div className="space-y-2.5 pt-2 text-xs text-muted-foreground">
+            <div className="space-y-2.5 pt-2 text-xs text-[var(--ink-band-muted,#94A3B8)]">
               <div className="flex items-start gap-2.5">
-                <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <MapPin className="h-4 w-4 text-[var(--brand-light,#60A5FA)] shrink-0 mt-0.5" />
                 {mapUrl ? (
                   <a
                     href={mapUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-primary transition-colors flex items-center gap-1 group/map"
+                    className="hover:text-white transition-colors flex items-center gap-1 group/map"
                   >
-                    <span>{address}</span>
+                    <span className="leading-relaxed">{address}</span>
                     <ExternalLink className="h-3 w-3 shrink-0 opacity-70 group-hover/map:opacity-100" />
                   </a>
                 ) : (
-                  <span>{address}</span>
+                  <span className="leading-relaxed">{address}</span>
                 )}
               </div>
               <div className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-primary shrink-0" />
-                <a href={`tel:${cleanPhone}`} className="hover:text-primary transition-colors">
+                <Phone className="h-4 w-4 text-[var(--brand-light,#60A5FA)] shrink-0" />
+                <a href={`tel:${cleanPhone}`} className="hover:text-white transition-colors">
                   {phone}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 text-primary shrink-0" />
-                <a href={`mailto:${email}`} className="hover:text-primary transition-colors">
+                <Mail className="h-4 w-4 text-[var(--brand-light,#60A5FA)] shrink-0" />
+                <a href={`mailto:${email}`} className="hover:text-white transition-colors">
                   {email}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
-                <Clock className="h-4 w-4 text-primary shrink-0" />
+                <Clock className="h-4 w-4 text-[var(--brand-light,#60A5FA)] shrink-0" />
                 <span>{workingHours}</span>
               </div>
             </div>
 
-            {/* Social Media Links */}
+            {/* Social Media & Action Links */}
             {(facebook || lineId || mapUrl) && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-2">
                 {facebook && (
                   <a
                     href={facebook.startsWith("http") ? facebook : `https://${facebook}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--r-ctl)] bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-400/30 text-xs font-medium transition-colors"
                   >
                     <span>Facebook</span>
                     <ExternalLink className="h-3 w-3" />
@@ -202,7 +205,7 @@ export function PortalFooter({
                     href={lineId.startsWith("http") ? lineId : `https://line.me/R/ti/p/~${lineId.replace(/^@/, "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600/10 text-emerald-600 hover:bg-emerald-600/20 text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--r-ctl)] bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs font-medium transition-colors"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     <span>LINE {lineId.startsWith("@") ? lineId : `@${lineId}`}</span>
@@ -213,9 +216,9 @@ export function PortalFooter({
                     href={mapUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--r-ctl)] bg-white/10 hover:bg-white/15 text-slate-200 border border-white/15 text-xs font-medium transition-colors"
                   >
-                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <MapPin className="h-3.5 w-3.5 text-[var(--brand-light,#60A5FA)]" />
                     <span>Google Maps</span>
                   </a>
                 )}
@@ -223,138 +226,138 @@ export function PortalFooter({
             )}
           </div>
 
-          {/* Column 2: หลักสูตรการศึกษา (2-3 cols) */}
+          {/* Column 2: หลักสูตรการศึกษา (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-sm font-semibold tracking-wide uppercase text-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <h4 className="text-sm font-bold tracking-wide uppercase text-white flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-[var(--brand-light,#60A5FA)]" />
               <span>{isThai ? "หลักสูตรการศึกษา" : "Academic"}</span>
             </h4>
-            <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <ul className="space-y-2.5 text-sm text-[var(--ink-band-muted,#94A3B8)]">
               <li>
                 <Link
                   href="/curriculum/B.A.-BUDDHISM"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ปริญญาตรี (พธ.บ.)" : "Bachelor (B.A.)"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/curriculum/M.A.-BUDDHISM"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ปริญญาโท (พธ.ม.)" : "Master (M.A.)"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/curriculum/PH.D.-BUDDHISM"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ปริญญาเอก (พธ.ด.)" : "Doctoral (Ph.D.)"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/curriculum"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "หลักสูตรทั้งหมด" : "All Programs"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/news"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ทุนการศึกษา" : "Scholarships"}</span>
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: บริการดิจิทัล (2-3 cols) */}
+          {/* Column 3: บริการดิจิทัล (3 cols) */}
           <div className="lg:col-span-3 space-y-4">
-            <h4 className="text-sm font-semibold tracking-wide uppercase text-foreground flex items-center gap-1.5">
-              <QrCode className="h-3.5 w-3.5 text-primary" />
+            <h4 className="text-sm font-bold tracking-wide uppercase text-white flex items-center gap-1.5">
+              <QrCode className="h-3.5 w-3.5 text-[var(--brand-light,#60A5FA)]" />
               <span>{isThai ? "บริการดิจิทัล" : "Digital Services"}</span>
             </h4>
-            <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <ul className="space-y-2.5 text-sm text-[var(--ink-band-muted,#94A3B8)]">
               <li>
                 <Link
                   href="/services"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ขอหนังสือรับรองนิสิต" : "Student Requests"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/attendance/checkin"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "เช็คชื่อเข้าชั้นเรียน QR" : "QR Check-in"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/rooms"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ระบบจองห้องประชุม" : "Room Reservations"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/documents/track"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ติดตามเอกสารสารบรรณ" : "Track E-Approval"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/projects"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ติดตามแผนยุทธศาสตร์" : "Strategic Projects"}</span>
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: หน่วยงาน & ลิงก์ภายนอก (2 cols) */}
+          {/* Column 4: องค์กร & เครือข่าย (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-sm font-semibold tracking-wide uppercase text-foreground flex items-center gap-1.5">
-              <Globe className="h-3.5 w-3.5 text-primary" />
+            <h4 className="text-sm font-bold tracking-wide uppercase text-white flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 text-[var(--brand-light,#60A5FA)]" />
               <span>{isThai ? "องค์กร & เครือข่าย" : "Network Links"}</span>
             </h4>
-            <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <ul className="space-y-2.5 text-sm text-[var(--ink-band-muted,#94A3B8)]">
               <li>
                 <Link
                   href="/staff"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ทำเนียบคณาจารย์" : "Faculty Staff"}</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/news"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover:text-[var(--brand-light,#60A5FA)] group-hover:translate-x-0.5 transition-all" />
                   <span>{isThai ? "ข่าวสารและกิจกรรม" : "Press & Events"}</span>
                 </Link>
               </li>
@@ -363,19 +366,19 @@ export function PortalFooter({
                   href={website.startsWith("http") ? website : `https://${website}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="hover:text-white transition-colors flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{isThai ? "เว็บไซต์ทางการ" : "Official Website"}</span>
-                  <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 ml-0.5" />
+                  <ExternalLink className="h-3 w-3 text-white/50 group-hover:text-white shrink-0 ml-0.5" />
                 </a>
               </li>
               <li>
                 <Link
                   href="/dashboard"
-                  className="hover:text-primary transition-colors flex items-center gap-1 group"
+                  className="inline-flex items-center gap-1.5 text-[var(--brand2-light,#F0C070)] hover:text-white font-semibold group pt-1 transition-colors"
                 >
-                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-primary font-medium">{isThai ? "ระบบหลังบ้าน" : "Staff Console"}</span>
+                  <span>{isThai ? "ระบบหลังบ้าน" : "Staff Console"}</span>
+                  <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </li>
             </ul>
@@ -383,30 +386,30 @@ export function PortalFooter({
         </div>
       </div>
 
-      {/* 3. Bottom Copyright & Compliance Bar */}
-      <div className="border-t border-border bg-background/80 py-6">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+      {/* 3. Bottom Copyright Bar (Contrast Dark) */}
+      <div className="border-t border-white/10 bg-black/40 py-5">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--ink-band-muted,#94A3B8)]">
           <div className="text-center sm:text-left">
             <p>
-              © 2026 {orgName}.
-              {" "}{isThai ? "สงวนลิขสิทธิ์ทั้งหมด" : "All rights reserved."}
+              © 2026 {orgName}.{" "}
+              {isThai ? "สงวนลิขสิทธิ์ทั้งหมด" : "All rights reserved."}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <Link href="/" className="hover:text-foreground transition-colors">
+          <div className="flex flex-wrap items-center justify-center gap-5 font-medium">
+            <Link href="/" className="hover:text-white transition-colors">
               {isThai ? "หน้าแรก" : "Home"}
             </Link>
-            <span>&bull;</span>
-            <Link href="/news" className="hover:text-foreground transition-colors">
+            <span className="text-white/20">&bull;</span>
+            <Link href="/news" className="hover:text-white transition-colors">
               {isThai ? "ประชาสัมพันธ์" : "PR"}
             </Link>
-            <span>&bull;</span>
-            <Link href="/staff" className="hover:text-foreground transition-colors">
+            <span className="text-white/20">&bull;</span>
+            <Link href="/staff" className="hover:text-white transition-colors">
               {isThai ? "ติดต่อคณะ" : "Contact"}
             </Link>
-            <span>&bull;</span>
-            <span className="text-primary font-medium">
+            <span className="text-white/20">&bull;</span>
+            <span className="text-[var(--brand2-light,#F0C070)] font-semibold">
               VibeCore Platform
             </span>
           </div>

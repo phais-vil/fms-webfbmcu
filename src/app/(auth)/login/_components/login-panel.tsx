@@ -89,14 +89,10 @@ export function LoginPanel({
               </button>
             </p>
           </div>
-          {providers.length > 0 && (
-            <>
-              <div className="or">
-                <span>{t("auth.orContinueWith")}</span>
-              </div>
-              <OAuthButtons providers={providers} />
-            </>
-          )}
+          <div className="or">
+            <span>{t("auth.orContinueWith")}</span>
+          </div>
+          <OAuthButtons providers={providers} />
         </>
       ) : (
         <>
@@ -120,14 +116,10 @@ export function LoginPanel({
               </button>
             </p>
           </div>
-          {providers.length > 0 && (
-            <>
-              <div className="or">
-                <span>{t("auth.orContinueWith")}</span>
-              </div>
-              <OAuthButtons providers={providers} mode="register" />
-            </>
-          )}
+          <div className="or">
+            <span>{t("auth.orContinueWith")}</span>
+          </div>
+          <OAuthButtons providers={providers} mode="register" />
         </>
       )}
     </div>

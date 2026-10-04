@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, BookOpen, Clock, Award, FileText, Search, ChevronRight } from "lucide-react";
+import { GraduationCap, BookOpen, Clock, Award, FileText, Search, ChevronRight, Calendar } from "lucide-react";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { resolvePublicTenantId } from "@/features/news/server";
@@ -49,6 +49,30 @@ export default async function PublicCurriculumPage({
     }
   };
 
+  const getLanguageBadge = (lang?: string) => {
+    switch (lang) {
+      case "ENGLISH":
+        return (
+          <span className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] px-2 py-0.5 rounded-full font-medium">
+            🇬🇧 {isThai ? "ภาคภาษาอังกฤษ" : "English Track"}
+          </span>
+        );
+      case "BILINGUAL":
+        return (
+          <span className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] px-2 py-0.5 rounded-full font-medium">
+            🌐 {isThai ? "สองภาษา" : "Bilingual"}
+          </span>
+        );
+      case "THAI":
+      default:
+        return (
+          <span className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] px-2 py-0.5 rounded-full font-medium">
+            🇹🇭 {isThai ? "ภาคภาษาไทย" : "Thai Track"}
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
       {/* Header Banner */}
@@ -65,6 +89,16 @@ export default async function PublicCurriculumPage({
             ? "หลักสูตรระดับปริญญาตรี โท และเอก ด้านพระพุทธศาสนา ปรัชญา และภาษาบาลี มุ่งเน้นการบูรณาการพุทธธรรมสู่สังคมยุคใหม่ ณ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
             : "Bachelor, Master, and Doctoral degree programs in Buddhist Studies, Religion, and Philosophy integrating timeless Buddhist wisdom with modern societal development at MCU."}
         </p>
+
+        <div className="pt-2 flex justify-center">
+          <Link
+            href="/curriculum/schedules"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors border border-primary/20 shadow-xs"
+          >
+            <Calendar className="h-4 w-4" />
+            <span>{isThai ? "ดูตารางสอน / ตารางเรียนประจำภาคการศึกษา" : "View Semester Class Schedules"}</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -171,9 +205,12 @@ export default async function PublicCurriculumPage({
               {/* Card Top */}
               <div className="p-5 space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded">
-                    {c.code}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded">
+                      {c.code}
+                    </span>
+                    {getLanguageBadge(c.programLanguage)}
+                  </div>
                   {getLevelBadge(c.degreeLevel)}
                 </div>
 
@@ -183,6 +220,11 @@ export default async function PublicCurriculumPage({
                       {isThai ? c.nameTh : c.nameEn}
                     </Link>
                   </h3>
+                  {(c.majorTh || c.majorEn) && (
+                    <div className="text-xs font-semibold text-primary mt-1">
+                      {isThai ? `สาขาวิชา: ${c.majorTh || c.majorEn}` : `Major: ${c.majorEn || c.majorTh}`}
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                     {isThai ? `${c.degreeTh} (${c.degreeAbbrTh})` : `${c.degreeEn} (${c.degreeAbbrEn})`}
                   </p>

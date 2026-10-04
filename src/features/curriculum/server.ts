@@ -8,6 +8,13 @@ export {
   listAdminDepartments,
   getDepartmentById,
   type AcademicDepartmentDto,
+  listAdminSchedules,
+  getScheduleById,
+  listPublicSchedules,
+  getPublicScheduleById,
+  getPublicSchedulesByCurriculum,
+  type ClassScheduleDto,
+  type ClassScheduleItemDto,
 } from "./_internal/services";
 
 export { CURRICULUM_P, CURRICULUM_PERMISSIONS } from "./permissions";

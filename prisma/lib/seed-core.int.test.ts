@@ -8,7 +8,7 @@ describe("seedCore", () => {
     const r = await seedCore(prisma, { tenantCode: "TEST", nameTh: "องค์กรทดสอบ", nameEn: "Test Org" });
     expect(await prisma.permission.count()).toBe(ALL_PERMISSIONS.length);
     const roles = await prisma.role.findMany({ where: { tenantId: r.tenantId } });
-    expect(roles.map((x) => x.code).sort()).toEqual(["ADMIN", "STAFF", "SUPER_ADMIN", "VIEWER"]);
+    expect(roles.map((x) => x.code).sort()).toEqual(["ADMIN", "INSTRUCTOR", "STAFF", "STUDENT", "SUPER_ADMIN", "VIEWER"]);
     expect(roles.find((x) => x.code === "SUPER_ADMIN")!.isSystem).toBe(true);
     const admin = await prisma.role.findFirst({ where: { code: "ADMIN" }, include: { rolePermissions: true } });
     expect(admin!.rolePermissions.length).toBe(5);
@@ -19,7 +19,7 @@ describe("seedCore", () => {
     await seedCore(prisma, { tenantCode: "TEST", nameTh: "a", nameEn: "a" });
     await seedCore(prisma, { tenantCode: "TEST", nameTh: "a", nameEn: "a" });
     expect(await prisma.tenant.count()).toBe(1);
-    expect(await prisma.role.count()).toBe(4);
+    expect(await prisma.role.count()).toBe(6);
     expect(await prisma.permission.count()).toBe(ALL_PERMISSIONS.length);
   });
 });

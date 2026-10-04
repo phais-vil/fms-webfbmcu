@@ -5,6 +5,8 @@ import type {
   UpdateCurriculumInput,
   CreateDepartmentInput,
   UpdateDepartmentInput,
+  CreateScheduleInput,
+  UpdateScheduleInput,
 } from "./validations";
 
 export interface CurriculumDto {
@@ -16,6 +18,9 @@ export interface CurriculumDto {
   code: string;
   nameTh: string;
   nameEn: string;
+  majorTh: string | null;
+  majorEn: string | null;
+  programLanguage: string;
   degreeTh: string;
   degreeEn: string;
   degreeAbbrTh: string;
@@ -37,43 +42,20 @@ export interface CurriculumDto {
   updatedAt: string;
 }
 
-export async function listAdminCurriculums(
-  tenantId: string,
-  filter?: { degreeLevel?: string; departmentId?: string; search?: string }
-): Promise<CurriculumDto[]> {
-  const where: Prisma.CurriculumWhereInput = { tenantId };
-
-  if (filter?.degreeLevel && filter.degreeLevel !== "ALL") {
-    where.degreeLevel = filter.degreeLevel as DegreeLevel;
-  }
-  if (filter?.departmentId && filter.departmentId !== "ALL") {
-    where.departmentId = filter.departmentId;
-  }
-  if (filter?.search) {
-    where.OR = [
-      { code: { contains: filter.search, mode: "insensitive" } },
-      { nameTh: { contains: filter.search, mode: "insensitive" } },
-      { nameEn: { contains: filter.search, mode: "insensitive" } },
-      { degreeAbbrTh: { contains: filter.search, mode: "insensitive" } },
-      { degreeAbbrEn: { contains: filter.search, mode: "insensitive" } },
-    ];
-  }
-
-  const list = await prisma.curriculum.findMany({
-    where,
-    include: { department: true },
-    orderBy: [{ degreeLevel: "asc" }, { displayOrder: "asc" }, { code: "asc" }],
-  });
-
-  return list.map((c) => ({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCurriculum(c: any): CurriculumDto {
+  return {
     id: c.id,
     tenantId: c.tenantId,
     departmentId: c.departmentId,
-    departmentNameTh: c.department.nameTh,
-    departmentNameEn: c.department.nameEn,
+    departmentNameTh: c.department?.nameTh || "",
+    departmentNameEn: c.department?.nameEn || "",
     code: c.code,
     nameTh: c.nameTh,
     nameEn: c.nameEn,
+    majorTh: c.majorTh || null,
+    majorEn: c.majorEn || null,
+    programLanguage: c.programLanguage || "THAI",
     degreeTh: c.degreeTh,
     degreeEn: c.degreeEn,
     degreeAbbrTh: c.degreeAbbrTh,
@@ -93,12 +75,58 @@ export async function listAdminCurriculums(
     displayOrder: c.displayOrder,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
-  }));
+  };
+}
+
+export async function listAdminCurriculums(
+  tenantId: string,
+  filter?: {
+    degreeLevel?: string;
+    departmentId?: string;
+    programLanguage?: string;
+    search?: string;
+  }
+): Promise<CurriculumDto[]> {
+  const where: Prisma.CurriculumWhereInput = { tenantId };
+
+  if (filter?.degreeLevel && filter.degreeLevel !== "ALL") {
+    where.degreeLevel = filter.degreeLevel as DegreeLevel;
+  }
+  if (filter?.departmentId && filter.departmentId !== "ALL") {
+    where.departmentId = filter.departmentId;
+  }
+  if (filter?.programLanguage && filter.programLanguage !== "ALL") {
+    where.programLanguage = filter.programLanguage;
+  }
+  if (filter?.search) {
+    where.OR = [
+      { code: { contains: filter.search, mode: "insensitive" } },
+      { nameTh: { contains: filter.search, mode: "insensitive" } },
+      { nameEn: { contains: filter.search, mode: "insensitive" } },
+      { majorTh: { contains: filter.search, mode: "insensitive" } },
+      { majorEn: { contains: filter.search, mode: "insensitive" } },
+      { degreeAbbrTh: { contains: filter.search, mode: "insensitive" } },
+      { degreeAbbrEn: { contains: filter.search, mode: "insensitive" } },
+    ];
+  }
+
+  const list = await prisma.curriculum.findMany({
+    where,
+    include: { department: true },
+    orderBy: [{ degreeLevel: "asc" }, { displayOrder: "asc" }, { code: "asc" }],
+  });
+
+  return list.map(mapCurriculum);
 }
 
 export async function listPublicCurriculums(
   tenantId: string,
-  filter?: { degreeLevel?: string; departmentId?: string; search?: string }
+  filter?: {
+    degreeLevel?: string;
+    departmentId?: string;
+    programLanguage?: string;
+    search?: string;
+  }
 ): Promise<CurriculumDto[]> {
   const where: Prisma.CurriculumWhereInput = {
     tenantId,
@@ -111,11 +139,16 @@ export async function listPublicCurriculums(
   if (filter?.departmentId && filter.departmentId !== "ALL") {
     where.departmentId = filter.departmentId;
   }
+  if (filter?.programLanguage && filter.programLanguage !== "ALL") {
+    where.programLanguage = filter.programLanguage;
+  }
   if (filter?.search) {
     where.OR = [
       { code: { contains: filter.search, mode: "insensitive" } },
       { nameTh: { contains: filter.search, mode: "insensitive" } },
       { nameEn: { contains: filter.search, mode: "insensitive" } },
+      { majorTh: { contains: filter.search, mode: "insensitive" } },
+      { majorEn: { contains: filter.search, mode: "insensitive" } },
       { degreeAbbrTh: { contains: filter.search, mode: "insensitive" } },
       { degreeAbbrEn: { contains: filter.search, mode: "insensitive" } },
     ];
@@ -127,35 +160,7 @@ export async function listPublicCurriculums(
     orderBy: [{ degreeLevel: "asc" }, { displayOrder: "asc" }, { code: "asc" }],
   });
 
-  return list.map((c) => ({
-    id: c.id,
-    tenantId: c.tenantId,
-    departmentId: c.departmentId,
-    departmentNameTh: c.department.nameTh,
-    departmentNameEn: c.department.nameEn,
-    code: c.code,
-    nameTh: c.nameTh,
-    nameEn: c.nameEn,
-    degreeTh: c.degreeTh,
-    degreeEn: c.degreeEn,
-    degreeAbbrTh: c.degreeAbbrTh,
-    degreeAbbrEn: c.degreeAbbrEn,
-    degreeLevel: c.degreeLevel,
-    totalCredits: c.totalCredits,
-    durationYears: c.durationYears,
-    philosophyTh: c.philosophyTh,
-    philosophyEn: c.philosophyEn,
-    careerOpportunitiesTh: c.careerOpportunitiesTh,
-    careerOpportunitiesEn: c.careerOpportunitiesEn,
-    tuitionFees: c.tuitionFees,
-    coverImage: c.coverImage,
-    curriculumPdfUrl: c.curriculumPdfUrl,
-    effectiveYear: c.effectiveYear,
-    isActive: c.isActive,
-    displayOrder: c.displayOrder,
-    createdAt: c.createdAt.toISOString(),
-    updatedAt: c.updatedAt.toISOString(),
-  }));
+  return list.map(mapCurriculum);
 }
 
 export async function getPublicCurriculumByCode(
@@ -168,36 +173,7 @@ export async function getPublicCurriculumByCode(
   });
 
   if (!c) return null;
-
-  return {
-    id: c.id,
-    tenantId: c.tenantId,
-    departmentId: c.departmentId,
-    departmentNameTh: c.department.nameTh,
-    departmentNameEn: c.department.nameEn,
-    code: c.code,
-    nameTh: c.nameTh,
-    nameEn: c.nameEn,
-    degreeTh: c.degreeTh,
-    degreeEn: c.degreeEn,
-    degreeAbbrTh: c.degreeAbbrTh,
-    degreeAbbrEn: c.degreeAbbrEn,
-    degreeLevel: c.degreeLevel,
-    totalCredits: c.totalCredits,
-    durationYears: c.durationYears,
-    philosophyTh: c.philosophyTh,
-    philosophyEn: c.philosophyEn,
-    careerOpportunitiesTh: c.careerOpportunitiesTh,
-    careerOpportunitiesEn: c.careerOpportunitiesEn,
-    tuitionFees: c.tuitionFees,
-    coverImage: c.coverImage,
-    curriculumPdfUrl: c.curriculumPdfUrl,
-    effectiveYear: c.effectiveYear,
-    isActive: c.isActive,
-    displayOrder: c.displayOrder,
-    createdAt: c.createdAt.toISOString(),
-    updatedAt: c.updatedAt.toISOString(),
-  };
+  return mapCurriculum(c);
 }
 
 export async function createCurriculum(
@@ -211,6 +187,9 @@ export async function createCurriculum(
       code: input.code.trim().toUpperCase(),
       nameTh: input.nameTh.trim(),
       nameEn: input.nameEn.trim(),
+      majorTh: input.majorTh?.trim() || null,
+      majorEn: input.majorEn?.trim() || null,
+      programLanguage: input.programLanguage || "THAI",
       degreeTh: input.degreeTh.trim(),
       degreeEn: input.degreeEn.trim(),
       degreeAbbrTh: input.degreeAbbrTh.trim(),
@@ -232,35 +211,7 @@ export async function createCurriculum(
     include: { department: true },
   });
 
-  return {
-    id: created.id,
-    tenantId: created.tenantId,
-    departmentId: created.departmentId,
-    departmentNameTh: created.department.nameTh,
-    departmentNameEn: created.department.nameEn,
-    code: created.code,
-    nameTh: created.nameTh,
-    nameEn: created.nameEn,
-    degreeTh: created.degreeTh,
-    degreeEn: created.degreeEn,
-    degreeAbbrTh: created.degreeAbbrTh,
-    degreeAbbrEn: created.degreeAbbrEn,
-    degreeLevel: created.degreeLevel,
-    totalCredits: created.totalCredits,
-    durationYears: created.durationYears,
-    philosophyTh: created.philosophyTh,
-    philosophyEn: created.philosophyEn,
-    careerOpportunitiesTh: created.careerOpportunitiesTh,
-    careerOpportunitiesEn: created.careerOpportunitiesEn,
-    tuitionFees: created.tuitionFees,
-    coverImage: created.coverImage,
-    curriculumPdfUrl: created.curriculumPdfUrl,
-    effectiveYear: created.effectiveYear,
-    isActive: created.isActive,
-    displayOrder: created.displayOrder,
-    createdAt: created.createdAt.toISOString(),
-    updatedAt: created.updatedAt.toISOString(),
-  };
+  return mapCurriculum(created);
 }
 
 export async function updateCurriculum(
@@ -276,6 +227,9 @@ export async function updateCurriculum(
   if (input.code !== undefined) data.code = input.code.trim().toUpperCase();
   if (input.nameTh !== undefined) data.nameTh = input.nameTh.trim();
   if (input.nameEn !== undefined) data.nameEn = input.nameEn.trim();
+  if (input.majorTh !== undefined) data.majorTh = input.majorTh?.trim() || null;
+  if (input.majorEn !== undefined) data.majorEn = input.majorEn?.trim() || null;
+  if (input.programLanguage !== undefined) data.programLanguage = input.programLanguage;
   if (input.degreeTh !== undefined) data.degreeTh = input.degreeTh.trim();
   if (input.degreeEn !== undefined) data.degreeEn = input.degreeEn.trim();
   if (input.degreeAbbrTh !== undefined) data.degreeAbbrTh = input.degreeAbbrTh.trim();
@@ -300,35 +254,7 @@ export async function updateCurriculum(
     include: { department: true },
   });
 
-  return {
-    id: updated.id,
-    tenantId: updated.tenantId,
-    departmentId: updated.departmentId,
-    departmentNameTh: updated.department.nameTh,
-    departmentNameEn: updated.department.nameEn,
-    code: updated.code,
-    nameTh: updated.nameTh,
-    nameEn: updated.nameEn,
-    degreeTh: updated.degreeTh,
-    degreeEn: updated.degreeEn,
-    degreeAbbrTh: updated.degreeAbbrTh,
-    degreeAbbrEn: updated.degreeAbbrEn,
-    degreeLevel: updated.degreeLevel,
-    totalCredits: updated.totalCredits,
-    durationYears: updated.durationYears,
-    philosophyTh: updated.philosophyTh,
-    philosophyEn: updated.philosophyEn,
-    careerOpportunitiesTh: updated.careerOpportunitiesTh,
-    careerOpportunitiesEn: updated.careerOpportunitiesEn,
-    tuitionFees: updated.tuitionFees,
-    coverImage: updated.coverImage,
-    curriculumPdfUrl: updated.curriculumPdfUrl,
-    effectiveYear: updated.effectiveYear,
-    isActive: updated.isActive,
-    displayOrder: updated.displayOrder,
-    createdAt: updated.createdAt.toISOString(),
-    updatedAt: updated.updatedAt.toISOString(),
-  };
+  return mapCurriculum(updated);
 }
 
 export async function deleteCurriculum(tenantId: string, id: string): Promise<void> {
@@ -558,4 +484,447 @@ export async function toggleDepartmentActive(
   });
   return updateDepartment(tenantId, { id, isActive: !current.isActive });
 }
+
+// ---------------------------------------------------------------------------
+// Class Schedule Services
+// ---------------------------------------------------------------------------
+
+export interface ClassScheduleItemDto {
+  id: string;
+  scheduleId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotPeriod: string | null;
+  courseCode: string;
+  courseNameTh: string;
+  courseNameEn: string | null;
+  instructorsTh: string;
+  instructorsEn: string | null;
+  roomOrNote: string | null;
+  displayOrder: number;
+}
+
+export interface ClassScheduleDto {
+  id: string;
+  tenantId: string;
+  departmentId: string;
+  departmentNameTh: string;
+  departmentNameEn: string;
+  curriculumId: string | null;
+  curriculumCode: string | null;
+  curriculumNameTh: string | null;
+  curriculumNameEn: string | null;
+  degreeLevel: DegreeLevel | null;
+  academicYear: number;
+  semester: number;
+  yearLevel: number;
+  titleTh: string;
+  titleEn: string | null;
+  targetGroupTh: string | null;
+  targetGroupEn: string | null;
+  roomLocationTh: string | null;
+  roomLocationEn: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  remarksTh: string | null;
+  remarksEn: string | null;
+  fileUrl: string | null;
+  isActive: boolean;
+  items: ClassScheduleItemDto[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+type ScheduleWithRelations = Prisma.ClassScheduleGetPayload<{
+  include: {
+    department: true;
+    curriculum: true;
+    items: true;
+  };
+}>;
+
+function mapScheduleToDto(s: ScheduleWithRelations): ClassScheduleDto {
+  return {
+    id: s.id,
+    tenantId: s.tenantId,
+    departmentId: s.departmentId,
+    departmentNameTh: s.department?.nameTh ?? "",
+    departmentNameEn: s.department?.nameEn ?? "",
+    curriculumId: s.curriculumId ?? null,
+    curriculumCode: s.curriculum?.code ?? null,
+    curriculumNameTh: s.curriculum?.nameTh ?? null,
+    curriculumNameEn: s.curriculum?.nameEn ?? null,
+    degreeLevel: s.curriculum?.degreeLevel ?? null,
+    academicYear: s.academicYear,
+    semester: s.semester,
+    yearLevel: s.yearLevel,
+    titleTh: s.titleTh,
+    titleEn: s.titleEn,
+    targetGroupTh: s.targetGroupTh,
+    targetGroupEn: s.targetGroupEn,
+    roomLocationTh: s.roomLocationTh,
+    roomLocationEn: s.roomLocationEn,
+    startDate: s.startDate ? s.startDate.toISOString().slice(0, 10) : null,
+    endDate: s.endDate ? s.endDate.toISOString().slice(0, 10) : null,
+    remarksTh: s.remarksTh,
+    remarksEn: s.remarksEn,
+    fileUrl: s.fileUrl,
+    isActive: s.isActive,
+    items: (s.items || []).map((item) => ({
+      id: item.id,
+      scheduleId: item.scheduleId,
+      dayOfWeek: item.dayOfWeek,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      slotPeriod: item.slotPeriod,
+      courseCode: item.courseCode,
+      courseNameTh: item.courseNameTh,
+      courseNameEn: item.courseNameEn,
+      instructorsTh: item.instructorsTh,
+      instructorsEn: item.instructorsEn,
+      roomOrNote: item.roomOrNote,
+      displayOrder: item.displayOrder,
+    })),
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+  };
+}
+
+export async function listAdminSchedules(
+  tenantId: string,
+  filter?: {
+    departmentId?: string;
+    curriculumId?: string;
+    academicYear?: number;
+    semester?: number;
+    yearLevel?: number;
+    search?: string;
+  }
+): Promise<ClassScheduleDto[]> {
+  const where: Prisma.ClassScheduleWhereInput = { tenantId };
+
+  if (filter?.departmentId && filter.departmentId !== "ALL") {
+    where.departmentId = filter.departmentId;
+  }
+  if (filter?.curriculumId && filter.curriculumId !== "ALL") {
+    where.curriculumId = filter.curriculumId;
+  }
+  if (filter?.academicYear) {
+    where.academicYear = filter.academicYear;
+  }
+  if (filter?.semester) {
+    where.semester = filter.semester;
+  }
+  if (filter?.yearLevel) {
+    where.yearLevel = filter.yearLevel;
+  }
+  if (filter?.search) {
+    where.OR = [
+      { titleTh: { contains: filter.search, mode: "insensitive" } },
+      { roomLocationTh: { contains: filter.search, mode: "insensitive" } },
+      { targetGroupTh: { contains: filter.search, mode: "insensitive" } },
+    ];
+  }
+
+  const rows = await prisma.classSchedule.findMany({
+    where,
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }, { displayOrder: "asc" }],
+      },
+    },
+    orderBy: [
+      { academicYear: "desc" },
+      { semester: "asc" },
+      { yearLevel: "asc" },
+      { createdAt: "desc" },
+    ],
+  });
+
+  return rows.map(mapScheduleToDto);
+}
+
+export async function getScheduleById(
+  tenantId: string,
+  id: string
+): Promise<ClassScheduleDto | null> {
+  const s = await prisma.classSchedule.findFirst({
+    where: { id, tenantId },
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }, { displayOrder: "asc" }],
+      },
+    },
+  });
+
+  if (!s) return null;
+  return mapScheduleToDto(s);
+}
+
+function parseDateSafe(dateStr?: string | null): Date | null {
+  if (!dateStr || typeof dateStr !== "string" || !dateStr.trim()) return null;
+  const d = new Date(dateStr.trim());
+  return isNaN(d.getTime()) ? null : d;
+}
+
+export async function createSchedule(
+  tenantId: string,
+  input: CreateScheduleInput
+): Promise<ClassScheduleDto> {
+  const created = await prisma.classSchedule.create({
+    data: {
+      tenantId,
+      departmentId: input.departmentId,
+      curriculumId: input.curriculumId || null,
+      academicYear: input.academicYear,
+      semester: input.semester,
+      yearLevel: input.yearLevel,
+      titleTh: input.titleTh,
+      titleEn: input.titleEn || null,
+      targetGroupTh: input.targetGroupTh || null,
+      targetGroupEn: input.targetGroupEn || null,
+      roomLocationTh: input.roomLocationTh || null,
+      roomLocationEn: input.roomLocationEn || null,
+      startDate: parseDateSafe(input.startDate),
+      endDate: parseDateSafe(input.endDate),
+      remarksTh: input.remarksTh || null,
+      remarksEn: input.remarksEn || null,
+      fileUrl: input.fileUrl || null,
+      isActive: input.isActive ?? true,
+      items: {
+        create: (input.items || []).map((item, idx) => ({
+          dayOfWeek: item.dayOfWeek,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          slotPeriod: item.slotPeriod || null,
+          courseCode: item.courseCode,
+          courseNameTh: item.courseNameTh,
+          courseNameEn: item.courseNameEn || null,
+          instructorsTh: item.instructorsTh,
+          instructorsEn: item.instructorsEn || null,
+          roomOrNote: item.roomOrNote || null,
+          displayOrder: item.displayOrder ?? idx,
+        })),
+      },
+    },
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+      },
+    },
+  });
+
+  return mapScheduleToDto(created);
+}
+
+export async function updateSchedule(
+  tenantId: string,
+  input: UpdateScheduleInput
+): Promise<ClassScheduleDto> {
+  const existing = await prisma.classSchedule.findFirst({
+    where: { id: input.id, tenantId },
+  });
+  if (!existing) {
+    throw new Error("curriculum.schedule.notFound");
+  }
+
+  // Update schedule and replace items in transaction if items provided
+  const updated = await prisma.$transaction(async (tx) => {
+    if (input.items) {
+      await tx.classScheduleItem.deleteMany({
+        where: { scheduleId: input.id },
+      });
+      await tx.classScheduleItem.createMany({
+        data: input.items.map((item, idx) => ({
+          scheduleId: input.id,
+          dayOfWeek: item.dayOfWeek,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          slotPeriod: item.slotPeriod || null,
+          courseCode: item.courseCode,
+          courseNameTh: item.courseNameTh,
+          courseNameEn: item.courseNameEn || null,
+          instructorsTh: item.instructorsTh,
+          instructorsEn: item.instructorsEn || null,
+          roomOrNote: item.roomOrNote || null,
+          displayOrder: item.displayOrder ?? idx,
+        })),
+      });
+    }
+
+    return tx.classSchedule.update({
+      where: { id: input.id },
+      data: {
+        departmentId: input.departmentId,
+        curriculumId: input.curriculumId === undefined ? undefined : input.curriculumId || null,
+        academicYear: input.academicYear,
+        semester: input.semester,
+        yearLevel: input.yearLevel,
+        titleTh: input.titleTh,
+        titleEn: input.titleEn === undefined ? undefined : input.titleEn || null,
+        targetGroupTh: input.targetGroupTh === undefined ? undefined : input.targetGroupTh || null,
+        targetGroupEn: input.targetGroupEn === undefined ? undefined : input.targetGroupEn || null,
+        roomLocationTh: input.roomLocationTh === undefined ? undefined : input.roomLocationTh || null,
+        roomLocationEn: input.roomLocationEn === undefined ? undefined : input.roomLocationEn || null,
+        startDate: input.startDate === undefined ? undefined : parseDateSafe(input.startDate),
+        endDate: input.endDate === undefined ? undefined : parseDateSafe(input.endDate),
+        remarksTh: input.remarksTh === undefined ? undefined : input.remarksTh || null,
+        remarksEn: input.remarksEn === undefined ? undefined : input.remarksEn || null,
+        fileUrl: input.fileUrl === undefined ? undefined : input.fileUrl || null,
+        isActive: input.isActive,
+      },
+      include: {
+        department: true,
+        curriculum: true,
+        items: {
+          orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+        },
+      },
+    });
+  });
+
+  return mapScheduleToDto(updated);
+}
+
+export async function deleteSchedule(tenantId: string, id: string): Promise<void> {
+  const existing = await prisma.classSchedule.findFirst({
+    where: { id, tenantId },
+  });
+  if (!existing) {
+    throw new Error("curriculum.schedule.notFound");
+  }
+
+  await prisma.classSchedule.delete({
+    where: { id },
+  });
+}
+
+export async function toggleScheduleActive(
+  tenantId: string,
+  id: string
+): Promise<ClassScheduleDto> {
+  const existing = await prisma.classSchedule.findFirstOrThrow({
+    where: { id, tenantId },
+  });
+  return updateSchedule(tenantId, { id, isActive: !existing.isActive });
+}
+
+// ---------------------------------------------------------------------------
+// Public Schedule Queries (Portal)
+// ---------------------------------------------------------------------------
+
+export async function listPublicSchedules(
+  tenantId: string,
+  filter?: {
+    departmentId?: string;
+    curriculumId?: string;
+    degreeLevel?: string;
+    academicYear?: number;
+    semester?: number;
+    yearLevel?: number;
+    search?: string;
+  }
+): Promise<ClassScheduleDto[]> {
+  const where: Prisma.ClassScheduleWhereInput = {
+    tenantId,
+    isActive: true,
+  };
+
+  if (filter?.departmentId && filter.departmentId !== "ALL") {
+    where.departmentId = filter.departmentId;
+  }
+  if (filter?.curriculumId && filter.curriculumId !== "ALL") {
+    where.curriculumId = filter.curriculumId;
+  }
+  if (filter?.degreeLevel && filter.degreeLevel !== "ALL") {
+    where.curriculum = {
+      degreeLevel: filter.degreeLevel as DegreeLevel,
+    };
+  }
+  if (filter?.academicYear) {
+    where.academicYear = filter.academicYear;
+  }
+  if (filter?.semester) {
+    where.semester = filter.semester;
+  }
+  if (filter?.yearLevel) {
+    where.yearLevel = filter.yearLevel;
+  }
+  if (filter?.search) {
+    where.OR = [
+      { titleTh: { contains: filter.search, mode: "insensitive" } },
+      { roomLocationTh: { contains: filter.search, mode: "insensitive" } },
+      { targetGroupTh: { contains: filter.search, mode: "insensitive" } },
+    ];
+  }
+
+  const rows = await prisma.classSchedule.findMany({
+    where,
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }, { displayOrder: "asc" }],
+      },
+    },
+    orderBy: [
+      { academicYear: "desc" },
+      { semester: "asc" },
+      { yearLevel: "asc" },
+      { createdAt: "desc" },
+    ],
+  });
+
+  return rows.map(mapScheduleToDto);
+}
+
+export async function getPublicScheduleById(
+  tenantId: string,
+  id: string
+): Promise<ClassScheduleDto | null> {
+  const s = await prisma.classSchedule.findFirst({
+    where: { id, tenantId, isActive: true },
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }, { displayOrder: "asc" }],
+      },
+    },
+  });
+
+  if (!s) return null;
+  return mapScheduleToDto(s);
+}
+
+export async function getPublicSchedulesByCurriculum(
+  tenantId: string,
+  curriculumId: string
+): Promise<ClassScheduleDto[]> {
+  const rows = await prisma.classSchedule.findMany({
+    where: { tenantId, curriculumId, isActive: true },
+    include: {
+      department: true,
+      curriculum: true,
+      items: {
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }, { displayOrder: "asc" }],
+      },
+    },
+    orderBy: [
+      { academicYear: "desc" },
+      { semester: "asc" },
+      { yearLevel: "asc" },
+    ],
+  });
+
+  return rows.map(mapScheduleToDto);
+}
+
 

@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, localizedName, academicYearLabel } from "./format";
+import {
+  formatDate,
+  localizedName,
+  academicYearLabel,
+  toThaiNumerals,
+  formatThaiDateFull,
+} from "./format";
 
 const d = new Date("2026-09-07T03:04:00Z");
 
@@ -20,6 +26,36 @@ describe("formatDate", () => {
     expect(withTime).toContain("10");
     expect(withTime).toContain("04");
     expect(withTime.length).toBeGreaterThan(dateOnly.length);
+  });
+});
+
+describe("toThaiNumerals", () => {
+  it("แปลงเลขอารบิกเป็นเลขไทยอย่างถูกต้อง", () => {
+    expect(toThaiNumerals(2569)).toBe("๒๕๖๙");
+    expect(toThaiNumerals("26")).toBe("๒๖");
+    expect(toThaiNumerals(0)).toBe("๐");
+  });
+});
+
+describe("formatThaiDateFull", () => {
+  it("แปลงวันที่เป็น วัน เดือน ปี ไทยพร้อมเลขไทย เช่น ๒๖ กันยายน ๒๕๖๙", () => {
+    expect(formatThaiDateFull("2026-09-26", "th")).toBe("๒๖ กันยายน ๒๕๖๙");
+    expect(formatThaiDateFull("2026-06-09", "th")).toBe("๙ มิถุนายน ๒๕๖๙");
+    expect(formatThaiDateFull("2026-09-25", "th")).toBe("๒๕ กันยายน ๒๕๖๙");
+  });
+
+  it("แปลงเป็นภาษาอังกฤษเมื่อ locale = en เช่น 26 September 2026", () => {
+    expect(formatThaiDateFull("2026-09-26", "en")).toBe("26 September 2026");
+    expect(formatThaiDateFull("2026-06-09", "en")).toBe("9 June 2026");
+  });
+
+  it("แปลงข้อความที่มีชื่อเดือนไทยและเลขอารบิกเป็นเลขไทย", () => {
+    expect(formatThaiDateFull("26 กันยายน 2569", "th")).toBe("๒๖ กันยายน ๒๕๖๙");
+  });
+
+  it("คืนค่าว่างเมื่อเป็น null หรือ undefined", () => {
+    expect(formatThaiDateFull(null, "th")).toBe("");
+    expect(formatThaiDateFull(undefined, "th")).toBe("");
   });
 });
 
